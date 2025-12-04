@@ -1,0 +1,14 @@
+<?php
+session_start();
+$era_loggato = isset($_SESSION['logged']) && $_SESSION['logged'] === true;
+$_SESSION = [];
+if (isset($_COOKIE['auth'])) {
+    setcookie('auth', '', time() - 3600, '/', '', false, true);
+}
+if ($era_loggato) {
+    $_SESSION['status'] = 'success';
+}
+session_write_close();
+header("Location: ./login");
+exit;
+?>

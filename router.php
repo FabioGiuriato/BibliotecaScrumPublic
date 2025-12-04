@@ -1,8 +1,12 @@
 <?php
 $whitelist = [
-    '/'        => 'pages/home.php',             // home page
-    '/home'        => 'pages/home.php',         // home page
-    '/webhook' => 'webhook.php'                 // Webhook pull server (local server)
+    '/'        => 'pages/index.php',             // home page
+    '/home'        => 'pages/index.php',         // home page
+    '/webhook' => 'webhook.php',                 // Webhook pull server (local server)
+    '/login' => 'pages/login.php',
+    '/confirm-email' => 'pages/confirmemail.php',
+    '/signup' => 'pages/signup.php',
+    '/logout' => 'pages/logout.php',
 ];
 
 
@@ -42,7 +46,7 @@ if (array_key_exists($request_uri, $whitelist)) {
 } else {
     http_response_code(403);
     echo "<h1 style='color:red'>403 ACCESSO NEGATO</h1>";
-    echo "<p>Hai cercato: <b>" . htmlspecialchars($request_uri) . "</b></p>"; // Ti mostro cosa vede il sistema
+    echo "<p>Hai cercato: <b>" . htmlspecialchars($request_uri) . "</b></p>";
     echo "<p>Ma le rotte valide sono solo: <b>" . implode(", ", array_keys($whitelist)) . "</b></p>";
     echo "<hr><p>Controlla router.php</p>";
 }
