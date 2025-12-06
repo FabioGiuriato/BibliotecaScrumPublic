@@ -15,6 +15,8 @@ il database é impostato per backupare alle 2:00 UTC+1 sul file backup_db.sql
 
 2 - Connettersi al database come URL **force-scoring.gl.at.ply.gg:26455** (jdbc:mysql://force-scoring.gl.at.ply.gg:26455) usando le credenziali fornite
 
+3 - Se da sei da codice, crea un .env con come campo Host => **force-scoring.gl.at.ply.gg:26455** (jdbc:mysql://force-scoring.gl.at.ply.gg:26455) e con le credenziali fornite
+
 Password Mysql:  PWBiblioteca2007
 
 ## Membri
