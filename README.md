@@ -1,23 +1,9 @@
-# ⚠️NON SETTARE PUBBLICA QUESTA REPO E NON CONDIVIDERE QUESTO README⚠️
-
-
 # Biblioteca Scrum
 
+[Wiki di sviluppo](wiki.md)
+
 ## Link Sito
-### Il sito si aggiorna in automatico facendo il pull da github ad ogni modifica del main (webhook)
 https://unexploratory-franchesca-lipochromic.ngrok-free.dev
-
-## Database
-il database é impostato per backupare alle 2:00 UTC+1 sul file backup_db.sql
-
-### Come connettersi al database
-1 - Installare DBeaver o qualsiasi interfaccia per la connessione ad un database remoto (porta 3306)
-
-2 - Connettersi al database come URL **5.tcp.eu.ngrok.io:15473** (jdbc:mysql://5.tcp.eu.ngrok.io:15473) usando le credenziali fornite
-
-3 - Se da sei da codice, connettiti al database da un DBeaver con le credenziali e  **force-scoring.gl.at.ply.gg** come url e **26455** come port, poi crea un .env con come campo Host **localhost** e con le credenziali fornite
-
-Password Mysql:  PWBiblioteca2007
 
 ## Membri
 - Federico Femia
