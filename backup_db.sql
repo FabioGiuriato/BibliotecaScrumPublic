@@ -597,14 +597,11 @@ INSERT INTO `utenti` VALUES
 ('000001','TestUsername1','Cobra','Ivi','GRRRMN07S01A655L','prova@mail.com','passwordhash1',0,0,0,0,0,'2025-12-08');
 /*!40000 ALTER TABLE `utenti` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+--
+-- Dumping routines for database 'database_sito'
+--
 
--- Dump completed on 2025-12-08 14:11:51
+-- insufficient privileges to SHOW CREATE PROCEDURE `CheckLoginUser`
+-- does utente_sito have permissions on mysql.proc?
+
