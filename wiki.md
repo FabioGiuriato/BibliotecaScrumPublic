@@ -23,3 +23,19 @@ il database é impostato per backupare alle 2:00 UTC+1 sul file backup_db.sql
 tutti i file presenti nella root sono indicizzati o serviti passando per .htdocs 
 
 la cartella src contiene i file utilizzabili nelle pagine
+
+## Interfacciarsi col database
+### Creare nuovi utenti
+Per creare nuovi utenti richiamare la procedura sp_crea_utente_alfanumerico, tramite 
+
+CALL sp_crea_utente_alfanumerico(USERNAME, NONE, COGNOME, CODICE_FISCALE, EMAIL, PASSWORD_HASH);
+
+la procedure restituirá un campo nuovo_id con l'id incrementante generato automaticamente
+
+<br>
+
+utente giá inserito:
+
+CALL sp_crea_utente_alfanumerico('TestUsername1', 'Cobra', 'Ivi', 'GRRRMN07S01A655L', 'prova@mail.com', 'passwordhash1');
+
+OUTPUT: nuovo_id 000001
