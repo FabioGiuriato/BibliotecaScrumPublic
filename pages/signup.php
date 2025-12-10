@@ -9,69 +9,64 @@ if (isset($_SESSION['logged']) && $_SESSION['logged'] === true) {
     exit();
 }
 
-if (!isset($pdo)) {
-    $messaggio_db = "Connessione al Database non riuscita (controlla db_config.php).";
-    $class_messaggio = "error";
-    exit();
-}
 $registratiConCodice = isset($_POST['conCodiceFiscale']) && $_POST['conCodiceFiscale'] == "true";
 $tipologia = $registratiConCodice ? " con Codice Fiscale" : "";
-$status = '';
+$error_msg = '';
 
 // LOGICA DI SIGNUP
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $daCodiceFiscale = isset($_POST['daCodiceFiscale']) ? boolval($_POST['daCodiceFiscale']) : false;
-    $follow_along = false;
-
-    if($email != '' && $password != ''){
-        if (!$daCodiceFiscale) {
+    try{
+        if(isset($pdo)) {
+            $email = $_POST['email'] ?? '';
+            $username = $_POST['username'] ?? '';
+            $password = $_POST['password'] ?? '';
             $nome = $_POST['nome'] ?? '';
             $cognome = $_POST['cognome'] ?? '';
-            $data_nascita = $_POST['data_nascita'] ?? '';
-            $comune_nascita = $_POST['comune_nascita'] ?? '';
-            $sesso = $_POST['sesso'] ?? '';
-            if ($nome === '' || $cognome === '' || $data_nascita === '' || $comune_nascita === '') {
-                $status = "Dati inseriti non validi";
+            $daCodiceFiscale = isset($_POST['daCodiceFiscale']) ? boolval($_POST['daCodiceFiscale']) : false;
+            $follow_along = false;
+
+            if ($nome != '' && $cognome != '' && $email != '' && $username != '' && $password != '') {
+                if (!$daCodiceFiscale) {
+                    $data_nascita = $_POST['data_nascita'] ?? '';
+                    $comune_nascita = $_POST['comune_nascita'] ?? '';
+                    $sesso = $_POST['sesso'] ?? '';
+                    if ($data_nascita == '' || $comune_nascita == '') {
+                        $error_msg = "Dati inseriti non validi";
+                    }
+                    $codice_fiscale = generateCodiceFiscale($nome, $cognome, $data_nascita, $comune_nascita, $sesso);
+                } else {
+                    $codice_fiscale = $_POST['codice_fiscale'] ?? '';
+                    if (empty($datiDaCodice)) {
+                        $error_msg = "Codice Fiscale non valido";
+                    }
+                }
+                $follow_along = true;
             }
-            $codice_fiscale = generateCodiceFiscale($nome, $cognome, $data_nascita, $comune_nascita, $sesso);
-        } else {
-            $cf = $_POST['codice_fiscale'] ?? '';
-            $datiDaCodice = extractFromCodiceFiscale($cf);
-            if (empty($datiDaCodice)) {
-                $status = "Codice Fiscale non valido";
-            } else {
-                $nome = $datiDaCodice['nome'] ?? '';
-                $cognome = $datiDaCodice['cognome'] ?? '';
-                $data_nascita = $datiDaCodice['data_nascita'] ?? '';
-                $comune_nascita = $datiDaCodice['comune_nascita'] ?? '';
-                $sesso = $datiDaCodice['sesso'] ?? '';
-                $codice_fiscale = $cf;
+            // Inserimento Utente
+            if ($error_msg == '' && $follow_along) {
+                $insert_string = "CALL sp_crea_utente_alfanumerico(:username, :nome, :cognome, :codice_fiscale, :email, :password)";
+                $stmt = $pdo->prepare($insert_string);
+                $password_hash = hash("sha256", $password);
+                $stmt->bindParam(":nome", $nome);
+                $stmt->bindParam(":cognome", $cognome);
+                $stmt->bindParam(":username", $username);
+                $stmt->bindParam(":codice_fiscale", $codice_fiscale);
+                $stmt->bindParam(":email", $email);
+                $stmt->bindParam(":password", $password_hash);
+                $resu = $stmt->execute();
+                if ($resu) {
+                    header("Location: /login");
+                    exit();
+                } else {
+                    $status = "Errore nell'inserimento dell'utente";
+                }
             }
         }
-        $follow_along = true;
-    }
-    // Inserimento nel DB
-    if ($status == '' && $follow_along) {
-        $insert_string = "CALL sp_crea_utente_alfanumerico(:nome, :cognome, :comune, :data, :sesso, :codice_fiscale, :email, :password)";
-        $stmt = $pdo->prepare($insert_string);
-        $password = password_hash($password, PASSWORD_DEFAULT);
-        $stmt->bindParam(":nome", $nome);
-        $stmt->bindParam(":cognome", $cognome);
-        $stmt->bindParam(":data", $data_nascita);
-        $stmt->bindParam(":comune", $comune_nascita);
-        $stmt->bindParam(":sesso", $sesso);
-        $stmt->bindParam(":codice_fiscale", $codice_fiscale);
-        $stmt->bindParam(":email", $email);
-        $stmt->bindParam(":password", $password);
-        if ($stmt->execute()) {
-            header("Location: /login");
-            exit();
-        } else {
-            $status = "Errore nell'inserimento dell'utente";
+        else {
+            $error_msg = "Errore di connessione al Database.";
         }
+    } catch (PDOException $e) {
+        $error_msg = "Errore di sistema: " . $e->getMessage();
     }
 }
 ?>
@@ -88,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php require_once './src/includes/header.php'; ?>
         <?php require_once './src/includes/navbar.php'; ?>
 
-        <div class="container" style="padding: 20px;">
+        <div class="container">
 
             <?php if (!empty($error_msg)): ?>
                 <div class="error"><?php echo htmlspecialchars($error_msg); ?></div>
@@ -96,6 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <h2>Registrati<?php echo $tipologia ?></h2>
             <form method="post">
+
+                <label for="username">Username:</label>
+                <input placeholder="Username" required type="text" id="username" name="username">
 
                 <label for="nome">Nome:</label>
                 <input placeholder="Nome" required type="text" id="nome" name="nome">
@@ -117,7 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <optgroup label="Preferenze">
                             <option value="M">Maschio</option>
                             <option value="F">Femmina</option>
-                            <option value="PND">Preferisco non dirlo</option>
                         </optgroup>
                     </select>
 
