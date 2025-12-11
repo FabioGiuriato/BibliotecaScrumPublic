@@ -4,9 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="294b6b77-9b33-4725-90e1-f1f8aeffe634" name="Changes" comment="Sistemato la pagina si signup, con collegamenti corretti privi di GET">
+    <list default="true" id="294b6b77-9b33-4725-90e1-f1f8aeffe634" name="Changes" comment="ottimizzazione immagini">
+      <change afterPath="$PROJECT_DIR$/public/css/style_forms.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/login.php" beforeDir="false" afterPath="$PROJECT_DIR$/pages/login.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pages/signup.php" beforeDir="false" afterPath="$PROJECT_DIR$/pages/signup.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/includes/header.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/includes/header.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/includes/navbar.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/includes/navbar.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +22,16 @@
     <execution>
       <phar pharPath="C:\xampp\htdocs\BibliotecaScrum\composer.phar" />
     </execution>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CSS File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Merge.Settings">
+    <option name="BRANCH" value="origin/main" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -58,6 +72,7 @@
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/xampp/htdocs/BibliotecaScrum",
+    "list.type.of.created.stylesheet": "CSS",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
