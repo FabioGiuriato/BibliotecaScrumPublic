@@ -2,7 +2,7 @@
 session_start();
 require_once "./src/includes/codiceFiscaleMethods.php";
 require_once 'db_config.php';
-require __DIR__ . '/phpmailer.php';
+require_once 'phpmailer.php';
 
 // Redirect se già loggato
 if (isset($_SESSION['logged']) && $_SESSION['logged'] === true) {
