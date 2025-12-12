@@ -1,13 +1,30 @@
 <?php
 session_start();
 require_once 'db_config.php';
-// Includo la tua libreria per il calcolo
-require_once __DIR__ . '/../src/includes/codiceFiscaleMethods.php';
 
-// --- FIX PER L'HTML DEL TUO COMPAGNO ---
-// Definisco le variabili che causavano "Undefined variable"
-// Se nell'URL c'è ?mode=manuale (es. clicchi su "Hai il CF?"), attiva la modalità manuale
-$registratiConCodice = isset($_GET['mode']) && $_GET['mode'] == 'manuale';
+// Includo la tua libreria CF: prova più possibili path
+$cfIncluded = false;
+$possible = [
+    __DIR__ . '/src/includes/codicefiscalemethods.php',
+    __DIR__ . '/src/includes/codiceFiscaleMethods.php',
+    __DIR__ . '/../src/includes/codicefiscalemethods.php',
+    __DIR__ . '/../src/includes/codiceFiscaleMethods.php',
+];
+foreach ($possible as $p) {
+    if (file_exists($p)) {
+        require_once $p;
+        $cfIncluded = true;
+        break;
+    }
+}
+if (!$cfIncluded) {
+    // Non blocco l'esecuzione: segnalo errore più avanti se serve
+}
+
+require_once __DIR__ . '/mail.php'; // il file che definisce getMailer()
+
+// modalità manuale se ?mode=manuale
+$registratiConCodice = isset($_GET['mode']) && $_GET['mode'] === 'manuale';
 $tipologia = $registratiConCodice ? 'manuale' : 'automatico';
 
 $error_msg = "";
@@ -18,140 +35,147 @@ function genID($l=6) { return substr(str_shuffle("0123456789abcdefghijklmnopqrst
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Recupero dati dal form
-    $nome     = $_POST['nome'] ?? '';
-    $cognome  = $_POST['cognome'] ?? '';
-    $username = $_POST['username'] ?? '';
-    $email    = $_POST['email'] ?? '';
+    $nome     = trim($_POST['nome'] ?? '');
+    $cognome  = trim($_POST['cognome'] ?? '');
+    $username = trim($_POST['username'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    
-    // Dati specifici per il calcolo
+
     $data     = $_POST['data_nascita'] ?? '';
     $sesso    = $_POST['sesso'] ?? '';
-    $comune   = $_POST['codice_comune'] ?? ''; // Controlla il name nel tuo HTML
-    
-    // CF Manuale (se inserito)
-    $cf_input = $_POST['codice_fiscale'] ?? '';
+    $codice_comune   = trim($_POST['codice_comune'] ?? ''); // nome coerente con PHP
+    $cf_input = trim($_POST['codice_fiscale'] ?? '');
 
-    if (isset($pdo)) {
+    if (!isset($pdo)) {
+        $error_msg = "Errore connessione database.";
+    } else {
         try {
-            $cf_finale = "";
+            // validazioni minime
+            if (!$username || !$nome || !$cognome || !$email || !$password) {
+                throw new Exception("Compila tutti i campi obbligatori.");
+            }
 
-            // LOGICA: Usiamo il CF manuale se presente, altrimenti calcoliamo
+            // controllo duplicate username/email
+            $chk = $pdo->prepare("SELECT 1 FROM utente WHERE username = ? OR email = ? LIMIT 1");
+            $chk->execute([$username, $email]);
+            if ($chk->fetch()) {
+                throw new Exception("Username o email già in uso.");
+            }
+
+            // genera CF finale
             if (!empty($cf_input)) {
                 $cf_finale = strtoupper($cf_input);
             } else {
-                // TUA FUNZIONE DI CALCOLO
-                if ($nome && $cognome && $data && $sesso && $comune) {
-                    $cf_finale = generateCodiceFiscale($nome, $cognome, $data, $sesso, $comune);
+                if (!$cfIncluded) throw new Exception("Libreria Codice Fiscale non trovata sul server.");
+                if ($nome && $cognome && $data && $sesso && $codice_comune) {
+                    // generateCodiceFiscale deve esistere nel file incluso
+                    $cf_finale = generateCodiceFiscale($nome, $cognome, $data, $sesso, $codice_comune);
                 } else {
-                    throw new Exception("Compila tutti i campi (Data, Sesso, Comune) per calcolare il CF.");
+                    throw new Exception("Compila tutti i campi (Data, Sesso, Codice Comune) per calcolare il CF.");
                 }
             }
 
-            // Inserimento nel DB (Compatibile con il tuo Login SHA256)
+            // crea utente
             $id = genID();
-            $hash = hash('sha256', $password);
+            // uso password_hash (più sicuro). Se vuoi SHA256: $hash = hash('sha256', $password);
+            $hash = password_hash($password, PASSWORD_DEFAULT);
 
-            $stmt = $pdo->prepare("INSERT INTO utenti 
+            $stmt = $pdo->prepare("INSERT INTO utente 
                 (codice_alfanumerico, username, nome, cognome, email, codice_fiscale, password_hash, email_confermata, data_creazione) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
-            
             $stmt->execute([$id, $username, $nome, $cognome, $email, $cf_finale, $hash]);
 
-            $success_msg = "Registrazione riuscita! Il tuo CF è: " . $cf_finale;
-            // header("Location: /login"); exit; // Scommenta per redirect
+            // genero token email e lo salvo in tokenemail
+            $token = bin2hex(random_bytes(32));
+            $scade = (new DateTime("now", new DateTimeZone("UTC")))->modify('+24 hours')->format('Y-m-d H:i:s');
+
+            $ins = $pdo->prepare("INSERT INTO tokenemail (token, codice_alfanumerico, scade_il) VALUES (?, ?, ?)");
+            $ins->execute([$token, $id, $scade]);
+
+            // invio mail di verifica
+            $baseUrl = 'https://unexploratory-franchesca-lipochromic.ngrok-free.dev/verifica';
+            $verifyLink = $baseUrl . '?token=' . urlencode($token);
+
+            $mail = getMailer();
+            $mail->addAddress($email, $nome . ' ' . $cognome);
+            $mail->isHTML(true);
+            $mail->Subject = 'Conferma la tua email';
+            $mail->Body    = "<p>Ciao " . htmlspecialchars($nome) . ",</p>
+                              <p>clicca il link per confermare la tua email:</p>
+                              <p><a href=\"" . htmlspecialchars($verifyLink) . "\">Conferma email</a></p>
+                              <p>Il link scade in 24 ore.</p>";
+
+            $mail->send();
+
+            $success_msg = "Registrazione riuscita! Ti abbiamo inviato una mail di conferma.";
 
         } catch (PDOException $e) {
+            // se errore duplicate da DB o altro, mostrane il messaggio per debug (rimuovi in produzione)
             $error_msg = "Errore Database: " . $e->getMessage();
         } catch (Exception $e) {
             $error_msg = "Errore: " . $e->getMessage();
-        } catch (TypeError $e) {
-             $error_msg = "Errore dati: Controlla che la data e i campi siano corretti.";
         }
-    } else {
-        $error_msg = "Errore connessione database.";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="it">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Registrazione</title>
-    </head>
-    <body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrazione</title>
+</head>
+<body>
 
-        <?php require_once './src/includes/header.php'; ?>
-        <?php require_once './src/includes/navbar.php'; ?>
+<?php if (!empty($error_msg)): ?>
+    <div class="error"><?php echo htmlspecialchars($error_msg); ?></div>
+<?php endif; ?>
+<?php if (!empty($success_msg)): ?>
+    <div class="success"><?php echo htmlspecialchars($success_msg); ?></div>
+<?php endif; ?>
 
-        <div class="container">
+<h2>Registrati <?php echo $tipologia ?></h2>
+<form method="post">
 
-            <?php if (!empty($error_msg)): ?>
-                <div class="error"><?php echo htmlspecialchars($error_msg); ?></div>
-            <?php endif; ?>
+    <label for="username">Username:</label>
+    <input placeholder="Username" required type="text" id="username" name="username">
 
-            <h2>Registrati<?php echo $tipologia ?></h2>
-            <form method="post">
+    <label for="nome">Nome:</label>
+    <input placeholder="Nome" required type="text" id="nome" name="nome">
 
-                <label for="username">Username:</label>
-                <input placeholder="Username" required type="text" id="username" name="username">
+    <label for="cognome">Cognome:</label>
+    <input placeholder="Cognome" required type="text" id="cognome" name="cognome">
 
-                <label for="nome">Nome:</label>
-                <input placeholder="Nome" required type="text" id="nome" name="nome">
+    <?php if ($registratiConCodice) { ?>
+        <label for="codice_fiscale">Codice Fiscale:</label>
+        <input placeholder="Codice Fiscale" required type="text" id="codice_fiscale" name="codice_fiscale">
+    <?php } else { ?>
+        <label for="codice_comune">Codice/Comune di Nascita (codice catastale):</label>
+        <input placeholder="Codice Comune" required type="text" id="codice_comune" name="codice_comune">
+        <label for="data_nascita">Data di Nascita:</label>
+        <input placeholder="Data di Nascita" required type="date" id="data_nascita" name="data_nascita">
+        <label for="sesso">Sesso:</label>
+        <select required name="sesso" id="sesso">
+            <option value="">--Sesso--</option>
+            <optgroup label="Preferenze">
+                <option value="M">Maschio</option>
+                <option value="F">Femmina</option>
+            </optgroup>
+        </select>
+    <?php } ?>
 
-                <label for="cognome">Cognome:</label>
-                <input placeholder="Cognome" required type="text" id="cognome" name="cognome">
+    <label for="email">Email:</label>
+    <input placeholder="Email" required type="email" id="email" name="email">
+    <label for="password">Password:</label>
+    <input required type="password" id="password" name="password">
+    <input type="submit" value="Registrami">
+</form>
 
-                <?php if ($registratiConCodice) { ?>
-                    <label for="codice_fiscale">Codice Fiscale:</label>
-                    <input placeholder="Codice Fiscale" required type="text" id="codice_fiscale" name="codice_fiscale">
-                <?php } else { ?>
-                    <label for="comune_nascita">Comune di Nascita:</label>
-                    <input placeholder="Comune di Nascita" required type="text" id="comune_nascita" name="comune_nascita">
-                    <label for="data_nascita">Data di Nascita:</label>
-                    <input placeholder="Data di Nascita" required type="date" id="data_nascita" name="data_nascita">
-                    <label for="sesso">Sesso:</label>
-                    <select required name="sesso" id="sesso">
-                        <option value="">--Sesso--</option>
-                        <optgroup label="Preferenze">
-                            <option value="M">Maschio</option>
-                            <option value="F">Femmina</option>
-                        </optgroup>
-                    </select>
+<?php if ($registratiConCodice) { ?>
+    <a href="?">Non hai il codice fiscale?</a>
+<?php } else { ?>
+    <a href="?mode=manuale">Hai il codice fiscale?</a>
+<?php } ?>
 
-                <?php } ?>
-                <label for="email">Email:</label>
-                <input placeholder="Email" required type="email" id="email" name="email">
-                <label for="password">Password:</label>
-                <input required type="password" id="password" name="password">
-                <input placeholder="Password" type="submit" value="Registrami">
-            </form>
-            <?php if ($registratiConCodice) { ?>
-                <a href="#" onclick='redirectConCodice(false)'>Non hai il codice fiscale?</a>
-            <?php } else { ?>
-                <a href="#" onclick='redirectConCodice(true)'>Hai il codice fiscale?</a>
-            <?php } ?>
-
-        </div>
-
-        <?php require_once "./src/includes/footer.php" ?>
-
-        <script>
-            const redirectConCodice = (conCodice) => {
-                const virtual_form = document.createElement("form");
-                virtual_form.style.display = "none"
-                virtual_form.method = "POST";
-                virtual_form.action = "./signup"
-                const decision = document.createElement("input");
-                decision.name = "conCodiceFiscale";
-                decision.type = "hidden";
-                decision.value = conCodice;
-                virtual_form.appendChild(decision)
-                document.body.appendChild(virtual_form);
-                virtual_form.submit();
-            }
-        </script>
-    </body>
+</body>
 </html>
