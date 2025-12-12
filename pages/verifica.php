@@ -1,11 +1,7 @@
 <?php
 require_once 'db_config.php';
 
-echo '  
-    <!DOCTYPE html>
-    <html>
-    <body>
-';
+echo '<!DOCTYPE html><html><body>';
 
 if (!isset($_GET['token'])) {
     echo "<h1>C'è stato un problema nel recupero del token</h1>";
@@ -14,7 +10,8 @@ if (!isset($_GET['token'])) {
 
 $token = $_GET['token'];
 
-$stmt = $pdo->prepare("SELECT codice_alfanumerico, scade_il FROM tokenemail WHERE token = ? LIMIT 1");
+// usa created_at invece di scade_il
+$stmt = $pdo->prepare("SELECT codice_alfanumerico, created_at FROM tokenemail WHERE token = ? LIMIT 1");
 $stmt->execute([$token]);
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -23,11 +20,12 @@ if (!$row) {
     exit;
 }
 
-// controllo scadenza
+// controllo scadenza (24 ore di default)
 $now = new DateTime("now", new DateTimeZone("UTC"));
-$expire = new DateTime($row['scade_il'], new DateTimeZone("UTC"));
+$created = new DateTime($row['created_at'], new DateTimeZone("UTC"));
+$created->modify('+24 hours');
 
-if ($now > $expire) {
+if ($now > $created) {
     // token scaduto → lo elimino
     $del = $pdo->prepare("DELETE FROM tokenemail WHERE token = ?");
     $del->execute([$token]);
@@ -37,7 +35,7 @@ if ($now > $expire) {
 }
 
 // aggiorno utente
-$stmt = $pdo->prepare("UPDATE utente SET email_confermata = 1 WHERE codice_alfanumerico = ?");
+$stmt = $pdo->prepare("UPDATE utenti SET email_confermata = 1 WHERE codice_alfanumerico = ?");
 $stmt->execute([$row['codice_alfanumerico']]);
 
 // elimino token usato
