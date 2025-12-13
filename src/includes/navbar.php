@@ -31,7 +31,7 @@ if (isset($_SESSION['nome_utente'])) {
             <img src="./public/assets/icon_search_ligth.png" alt="Cerca" class="navbar_search_icon_mobile">
         </a>
         <div class="search_container">
-            <form class="search_container" action="">
+            <form class="search_container" action="search" method="GET">
                 <button type="submit" class="search_icon_button">
                     <img src="./public/assets/icon_search_dark.png" alt="Cerca" class="navbar_search_icon">
                 </button>
