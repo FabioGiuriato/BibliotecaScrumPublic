@@ -58,11 +58,15 @@ if (isset($pdo)) {
     <?php if (!empty($biblioteche)): ?>
         <table border="1">
             <tr>
+                <th>Id</th>
                 <th>Nome</th>
                 <th>Indirizzo</th>
                 <th>Lat</th>
                 <th>Lon</th>
                 <th>Orari</th>
+                <th>Modifica</th>
+                <th>Elmina</th>
+
             </tr>
 
             <?php $orari = 0; foreach ($biblioteche as $biblioteca): ?>
@@ -77,6 +81,8 @@ if (isset($pdo)) {
                         }else{
                             $orari= htmlspecialchars($biblioteca['orari']);
                         }?> <?= $orari?> </td>
+                   <td><button id="modifica<?=$biblioteca['id']?>">Modifica</button></td>
+                    <td><button id="elimina<?=$biblioteca['id']?>">Elimina</button></td>
                 </tr>
             <?php endforeach; ?>
         </table>
@@ -95,3 +101,7 @@ if (isset($pdo)) {
         border: solid 1px black;
     }
 </style>
+
+<script>
+
+</script>
