@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 set_time_limit(0);
 
 $saveDir = __DIR__ . '/public/bookCover/';
-$concurrentRequests = 10; // Numero di richieste simultanee (non esagerare per evitare ban IP)
+$concurrentRequests = 5; // Abbassato a 5 per essere meno aggressivi col server
 
 if (!file_exists($saveDir)) {
     mkdir($saveDir, 0777, true);
@@ -13,7 +13,7 @@ if (!file_exists($saveDir)) {
 
 require_once 'db_config.php';
 
-echo "<h1>Scaricamento Parallelo (Multi-Curl)</h1><pre>";
+echo "<h1>Scaricamento Ibrido (Google + OpenLibrary)</h1><pre>";
 
 try {
     // 1. Prendo tutti i libri
@@ -24,8 +24,11 @@ try {
     $daScaricare = [];
     foreach ($libri as $l) {
         $isbn = trim($l['isbn']);
+        // Pulisco l'ISBN da trattini per OpenLibrary
+        $isbnClean = str_replace('-', '', $isbn);
+        
         if (!file_exists($saveDir . $isbn . '.png') && !file_exists($saveDir . $isbn . '.jpg')) {
-            $daScaricare[] = $isbn;
+            $daScaricare[] = ['original' => $isbn, 'clean' => $isbnClean];
         }
     }
 
@@ -33,92 +36,104 @@ try {
     echo "Libri da scaricare: $totale\n\n";
 
     if ($totale === 0) {
-        echo "Tutto aggiornato.";
+        echo "Tutto aggiornato.</pre>";
         exit;
     }
 
-    // 3. Processo a blocchi paralleli
+    // 3. Processo a blocchi
     $batches = array_chunk($daScaricare, $concurrentRequests);
     
     foreach ($batches as $batchIndex => $batchIsbns) {
         $mh = curl_multi_init();
         $curlHandles = [];
 
-        // Preparo le richieste multiple
-        foreach ($batchIsbns as $isbn) {
+        // Preparo le richieste per Google
+        foreach ($batchIsbns as $item) {
+            $isbn = $item['original'];
             $url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" . $isbn;
             
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             
-            // Aggiungo alla "pila" multi-curl
             curl_multi_add_handle($mh, $ch);
-            
-            // Salvo il riferimento usando l'ISBN come chiave per ritrovarlo dopo
             $curlHandles[$isbn] = $ch;
         }
 
-        // Eseguo tutte le richieste simultaneamente
+        // Eseguo
         $running = null;
         do {
             curl_multi_exec($mh, $running);
             curl_multi_select($mh);
         } while ($running > 0);
 
-        // Raccolgo i risultati
+        // Raccolgo risultati
         foreach ($curlHandles as $isbn => $ch) {
-            $response = curl_multi_get_content($ch);
+            // *** CORREZIONE FUNZIONE QUI SOTTO ***
+            $response = curl_multi_getcontent($ch); 
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $saved = false;
             
+            // TENTATIVO 1: GOOGLE BOOKS
             if ($httpCode == 200 && $response) {
                 $data = json_decode($response, true);
-                
                 if (isset($data['items'][0]['volumeInfo']['imageLinks'])) {
                     $links = $data['items'][0]['volumeInfo']['imageLinks'];
+                    $imgUrl = $links['extraLarge'] ?? $links['large'] ?? $links['medium'] ?? $links['small'] ?? $links['thumbnail'] ?? null;
                     
-                    // Cerco la qualità migliore
-                    $imgUrl = $links['extraLarge'] 
-                           ?? $links['large'] 
-                           ?? $links['medium'] 
-                           ?? $links['small'] 
-                           ?? $links['thumbnail'] 
-                           ?? null;
-
                     if ($imgUrl) {
                         $imgUrl = str_replace('http://', 'https://', $imgUrl);
-                        $imgData = @file_get_contents($imgUrl); // Scarico l'immagine effettiva
+                        $imgData = @file_get_contents($imgUrl);
                         if ($imgData) {
                             file_put_contents($saveDir . $isbn . '.png', $imgData);
-                            echo "[OK] $isbn salvato.\n";
+                            echo "[OK-GOOGLE] $isbn\n";
+                            $saved = true;
                         }
-                    } else {
-                        echo "[NO IMG] $isbn (Nessun link immagine nel JSON)\n";
                     }
-                } else {
-                    echo "[NO DATA] $isbn (Libro non trovato o senza copertina)\n";
                 }
-            } else {
-                echo "[ERR API] $isbn (Http Code: $httpCode)\n";
             }
 
-            // Pulisco la memoria
+            // TENTATIVO 2: OPEN LIBRARY (FALLBACK)
+            if (!$saved) {
+                // Recupero l'ISBN pulito dall'array originale
+                $cleanIsbn = "";
+                foreach($batchIsbns as $b) { if($b['original'] == $isbn) $cleanIsbn = $b['clean']; }
+
+                $olUrl = "https://covers.openlibrary.org/b/isbn/" . $cleanIsbn . "-L.jpg?default=false";
+                
+                // OpenLibrary ritorna 404 se non trova l'immagine (grazie a default=false)
+                $headers = @get_headers($olUrl);
+                if ($headers && strpos($headers[0], '200')) {
+                    $imgData = @file_get_contents($olUrl);
+                    if ($imgData && strlen($imgData) > 100) { // Controllo che non sia un pixel vuoto
+                        file_put_contents($saveDir . $isbn . '.png', $imgData);
+                        echo "[OK-OPENLIB] $isbn (Recuperato dal backup)\n";
+                        $saved = true;
+                    }
+                }
+            }
+
+            if (!$saved) {
+                echo "[FALLITO] $isbn (Nessuna copertina trovata su Google o OpenLib)\n";
+            }
+
             curl_multi_remove_handle($mh, $ch);
             curl_close($ch);
         }
 
         curl_multi_close($mh);
         
-        echo "--- Blocco completato ---\n";
-        flush(); // Forza l'output a video
-        sleep(1); // Pausa di sicurezza tra un blocco e l'altro
+        echo "--- Batch completato ---\n";
+        flush();
+        sleep(2); // Pausa leggermente più lunga per il server
     }
 
 } catch (Exception $e) {
-    echo "Errore: " . $e->getMessage();
+    echo "Errore Critico: " . $e->getMessage();
 }
 
-echo "\nFinito.";
+echo "\nFinito.</pre>";
 ?>
