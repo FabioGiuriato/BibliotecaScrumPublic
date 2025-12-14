@@ -83,7 +83,7 @@ require './src/includes/navbar.php';
     <h1>Home</h1>
 
     <?php if ($messaggio_db): ?>
-        <pre class="message"><?= htmlspecialchars($messaggio_db) ?></pre>
+        <pre class="message"><?= $messaggio_db ?></pre>
     <?php endif; ?>
 
     <?php if ($prestiti_attivi): ?>
@@ -112,7 +112,7 @@ require './src/includes/navbar.php';
 
     <?php foreach ($categoriePopolari as $catName => $libriCat): ?>
         <div class="section">
-            <h2><?= htmlspecialchars($catName) ?></h2>
+            <h2><?= $catName?></h2>
             <div class="grid">
                 <?php if ($libriCat): ?>
                     <?php foreach ($libriCat as $libro): ?>

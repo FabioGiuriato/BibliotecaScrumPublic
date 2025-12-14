@@ -19,6 +19,7 @@ $whitelist = [
     '/verifica' => 'pages/verifica.php',
     '/dashboard' => 'pages/dashboard.php',
     '/blank' => 'pages/blankpage.php',
+    '/search' => 'pages/search.php',
 ];
 
 // LOGICA ROUTER
