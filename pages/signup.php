@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->addAddress($email, $nome . ' ' . $cognome);
             $mail->isHTML(true);
             $mail->Subject = 'Conferma la tua email';
-            $mail->Body = $mail->Body = "<p>Ciao " . htmlspecialchars($row['nome']) . ",</p>
+            $mail->Body = $mail->Body = "<p>Ciao " . htmlspecialchars($nome) . ",</p>
                                <p>Clicca questo link per confermare la tua email:</p>
                                <p><a href=\"" . htmlspecialchars($verifyLink) . "\">Conferma email</a></p>
                                <br>
