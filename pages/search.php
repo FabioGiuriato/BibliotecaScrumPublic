@@ -8,7 +8,7 @@ function highlight_text(?string $text, string $search): string {
     return preg_replace('/' . preg_quote($search, '/') . '/iu', '<mark>$0</mark>', $safe);
 }
 
-// Recupero della query di ricerca
+// Recupero della query di ricerca dalla navbar
 $search_query = trim($_GET['search'] ?? '');
 
 // Risultati inizializzati
@@ -47,15 +47,11 @@ if (!empty($search_query)) {
             cognome,
             email
         FROM utenti
-        WHERE username LIKE :search
-           OR nome LIKE :search
-           OR cognome LIKE :search
         ORDER BY username ASC
     ";
 
     try {
-        $stmt = $pdo->prepare($sql_users);
-        $stmt->execute(['search' => "%$search_query%"]);
+        $stmt = $pdo->query($sql_users);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         $users = [];
@@ -69,9 +65,7 @@ require './src/includes/navbar.php';
 <div class="page_contents">
     <h2>🔎 Filtri di Ricerca</h2>
 
-    <form id="filter_form" method="GET">
-        <input type="hidden" name="search" value="<?= htmlspecialchars($search_query) ?>">
-
+    <form id="filter_form">
         <h3>Libri / Autori</h3>
         <label><input type="checkbox" name="filtra_titolo" checked> Titolo libro</label><br>
         <label><input type="checkbox" name="filtra_autore_nome" checked> Nome autore</label><br>
@@ -88,59 +82,50 @@ require './src/includes/navbar.php';
     <hr>
 
     <h1>Risultati Libri</h1>
-
-    <?php if (!empty($search_query) && !empty($books)): ?>
-        <p>Trovati <strong id="results_count_books"><?= count($books) ?></strong> libri per <strong><?= htmlspecialchars($search_query) ?></strong></p>
-        <div style="display:flex;flex-wrap:wrap;gap:15px;" id="results_container_books">
-            <?php foreach ($books as $book): ?>
-                <div class="book_card"
-                     data-titolo="<?= htmlspecialchars($book['titolo']) ?>"
-                     data-autore_nome="<?= htmlspecialchars($book['autore_nome']) ?>"
-                     data-autore_cognome="<?= htmlspecialchars($book['autore_cognome']) ?>"
-                     data-editore="<?= htmlspecialchars($book['editore']) ?>"
-                     data-descrizione="<?= htmlspecialchars($book['descrizione'] ?? '') ?>"
-                     style="width:180px;border:1px solid #ccc;padding:10px;border-radius:5px;">
-                    <img src="<?= htmlspecialchars($book['copertina'] ?? 'src/assets/placeholder.jpg') ?>" style="width:100%">
-                    <h3 class="book_titolo"><?= highlight_text($book['titolo'], $search_query) ?></h3>
-                    <p class="book_autore_nome"><strong>Nome autore:</strong> <?= highlight_text($book['autore_nome'], $search_query) ?></p>
-                    <p class="book_autore_cognome"><strong>Cognome autore:</strong> <?= highlight_text($book['autore_cognome'], $search_query) ?></p>
-                    <p class="book_editore"><strong>Editore:</strong> <?= highlight_text($book['editore'], $search_query) ?></p>
-                    <p class="book_descrizione"><strong>Descrizione:</strong> <?= highlight_text(substr($book['descrizione'] ?? '', 0, 100), $search_query) ?>...</p>
-                    <a href="/info_libro?isbn=<?= htmlspecialchars($book['isbn']) ?>">Dettagli</a>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php elseif (!empty($search_query)): ?>
-        <p>Nessun libro trovato.</p>
-    <?php endif; ?>
+    <p>Trovati <strong id="results_count_books"><?= count($books) ?></strong> libri per <strong id="search_term_books"><?= htmlspecialchars($search_query) ?></strong></p>
+    <div id="results_container_books">
+        <?php foreach ($books as $book): ?>
+            <div class="book_card"
+                 data-titolo="<?= htmlspecialchars($book['titolo']) ?>"
+                 data-autore_nome="<?= htmlspecialchars($book['autore_nome']) ?>"
+                 data-autore_cognome="<?= htmlspecialchars($book['autore_cognome']) ?>"
+                 data-editore="<?= htmlspecialchars($book['editore']) ?>"
+                 data-descrizione="<?= htmlspecialchars($book['descrizione'] ?? '') ?>"
+                 style="width:180px;border:1px solid #ccc;padding:10px;border-radius:5px;">
+                <img src="<?= htmlspecialchars($book['copertina'] ?? 'src/assets/placeholder.jpg') ?>" style="width:100%">
+                <h3 class="book_titolo"><?= highlight_text($book['titolo'], $search_query) ?></h3>
+                <p class="book_autore_nome"><strong>Nome autore:</strong> <?= highlight_text($book['autore_nome'], $search_query) ?></p>
+                <p class="book_autore_cognome"><strong>Cognome autore:</strong> <?= highlight_text($book['autore_cognome'], $search_query) ?></p>
+                <p class="book_editore"><strong>Editore:</strong> <?= highlight_text($book['editore'], $search_query) ?></p>
+                <p class="book_descrizione"><strong>Descrizione:</strong> <?= highlight_text(substr($book['descrizione'] ?? '', 0, 100), $search_query) ?>...</p>
+                <a href="/info_libro?isbn=<?= htmlspecialchars($book['isbn']) ?>">Dettagli</a>
+            </div>
+        <?php endforeach; ?>
+    </div>
 
     <hr>
 
     <h1>Risultati Utenti</h1>
-
-    <?php if (!empty($search_query) && !empty($users)): ?>
-        <p>Trovati <strong id="results_count_users"><?= count($users) ?></strong> utenti per <strong><?= htmlspecialchars($search_query) ?></strong></p>
-        <div style="display:flex;flex-wrap:wrap;gap:15px;" id="results_container_users">
-            <?php foreach ($users as $user): ?>
-                <div class="user_card"
-                     data-username="<?= htmlspecialchars($user['username']) ?>"
-                     data-user_nome="<?= htmlspecialchars($user['nome']) ?>"
-                     data-user_cognome="<?= htmlspecialchars($user['cognome']) ?>"
-                     style="width:180px;border:1px solid #ccc;padding:10px;border-radius:5px;">
-                    <p class="user_username"><strong>Username:</strong> <?= highlight_text($user['username'], $search_query) ?></p>
-                    <p class="user_user_nome"><strong>Nome:</strong> <?= highlight_text($user['nome'], $search_query) ?></p>
-                    <p class="user_user_cognome"><strong>Cognome:</strong> <?= highlight_text($user['cognome'], $search_query) ?></p>
-                    <p class="user_email"><strong>Email:</strong> <?= htmlspecialchars($user['email']) ?></p>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php elseif (!empty($search_query)): ?>
-        <p>Nessun utente trovato.</p>
-    <?php endif; ?>
+    <p>Trovati <strong id="results_count_users"><?= count($users) ?></strong> utenti per <strong id="search_term_users"><?= htmlspecialchars($search_query) ?></strong></p>
+    <div id="results_container_users">
+        <?php foreach ($users as $user): ?>
+            <div class="user_card"
+                 data-username="<?= htmlspecialchars($user['username']) ?>"
+                 data-user_nome="<?= htmlspecialchars($user['nome']) ?>"
+                 data-user_cognome="<?= htmlspecialchars($user['cognome']) ?>"
+                 style="width:180px;border:1px solid #ccc;padding:10px;border-radius:5px;">
+                <p class="user_username"><strong>Username:</strong> <?= highlight_text($user['username'], $search_query) ?></p>
+                <p class="user_user_nome"><strong>Nome:</strong> <?= highlight_text($user['nome'], $search_query) ?></p>
+                <p class="user_user_cognome"><strong>Cognome:</strong> <?= highlight_text($user['cognome'], $search_query) ?></p>
+                <p class="user_email"><strong>Email:</strong> <?= htmlspecialchars($user['email']) ?></p>
+            </div>
+        <?php endforeach; ?>
+    </div>
 </div>
 
 <script>
     const checkboxes = document.querySelectorAll('#filter_form input[type=checkbox]');
+    const searchQuery = "<?= strtolower(htmlspecialchars($search_query)) ?>";
 
     function highlightText(text, search) {
         if (!search) return text;
@@ -149,57 +134,45 @@ require './src/includes/navbar.php';
     }
 
     function filterResults() {
-        const search = document.querySelector('input[name="search"]').value.trim();
         const activeFilters = Array.from(checkboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.name.replace('filtra_', ''));
 
-        // --- FILTRO LIBRI ---
-        const bookCards = document.querySelectorAll('.book_card');
+        // Filtra libri
         let visibleCountBooks = 0;
-        bookCards.forEach(card => {
-            let show = false;
-            activeFilters.forEach(field => {
-                const value = card.dataset[field] || '';
-                if (value.toLowerCase().includes(search.toLowerCase())) show = true;
-            });
+        document.querySelectorAll('.book_card').forEach(card => {
+            const show = activeFilters.some(field => (card.dataset[field] || '').toLowerCase().includes(searchQuery));
             card.style.display = show ? 'block' : 'none';
-            if (show) visibleCountBooks++;
-
-            if (show && search) {
+            if(show) visibleCountBooks++;
+            if(show) {
                 card.querySelectorAll('h3, p').forEach(el => {
                     const field = el.className.replace('book_', '');
-                    if (activeFilters.includes(field)) el.innerHTML = highlightText(card.dataset[field], search);
+                    if(activeFilters.includes(field)) el.innerHTML = highlightText(card.dataset[field], searchQuery);
                 });
             }
         });
-        const countBooksElem = document.getElementById('results_count_books');
-        if(countBooksElem) countBooksElem.textContent = visibleCountBooks;
+        document.getElementById('results_count_books').textContent = visibleCountBooks;
 
-        // --- FILTRO UTENTI ---
-        const userCards = document.querySelectorAll('.user_card');
+        // Filtra utenti
         let visibleCountUsers = 0;
-        userCards.forEach(card => {
-            let show = false;
-            activeFilters.forEach(field => {
-                const value = card.dataset[field] || '';
-                if (value.toLowerCase().includes(search.toLowerCase())) show = true;
-            });
+        document.querySelectorAll('.user_card').forEach(card => {
+            const show = activeFilters.some(field => (card.dataset[field] || '').toLowerCase().includes(searchQuery));
             card.style.display = show ? 'block' : 'none';
-            if (show) visibleCountUsers++;
-
-            if (show && search) {
+            if(show) visibleCountUsers++;
+            if(show) {
                 card.querySelectorAll('p').forEach(el => {
                     const field = el.className.replace('user_', '');
-                    if (activeFilters.includes(field)) el.innerHTML = highlightText(card.dataset[field], search);
+                    if(activeFilters.includes(field)) el.innerHTML = highlightText(card.dataset[field], searchQuery);
                 });
             }
         });
-        const countUsersElem = document.getElementById('results_count_users');
-        if(countUsersElem) countUsersElem.textContent = visibleCountUsers;
+        document.getElementById('results_count_users').textContent = visibleCountUsers;
     }
 
+    // onchange sui checkbox
     checkboxes.forEach(cb => cb.addEventListener('change', filterResults));
+
+    // Applica filtro iniziale
     filterResults();
 </script>
 
