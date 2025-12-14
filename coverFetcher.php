@@ -2,51 +2,78 @@
 // Configurazione base
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-set_time_limit(0); // Rimuove il limite di tempo di esecuzione
+set_time_limit(0); // Rimuove limiti di tempo
 
-// Percorso salvataggio (relativo alla root dove si trova questo file)
+// ---------------- CONFIGURAZIONE ---------------- //
 $saveDir = __DIR__ . '/public/bookCover/';
+$batchSize = 35; // Google Books supporta max 40 risultati per pagina. Stiamo sotto per sicurezza.
+// ------------------------------------------------ //
 
-// Crea la cartella se non esiste
+// Crea cartella se non esiste
 if (!file_exists($saveDir)) {
     if (!mkdir($saveDir, 0777, true)) {
-        die("Errore: Impossibile creare la cartella $saveDir. Controlla i permessi.");
+        die("Errore: Impossibile creare la cartella $saveDir.");
     }
 }
 
-// Connessione al DB
 require_once 'db_config.php';
 
-echo "<h1>Scaricamento Copertine Avviato (Logica Migliorata)</h1>";
+echo "<h1>Scaricamento Copertine Bulk (Ottimizzato)</h1>";
 echo "<pre>";
 
 try {
-    // 1. Recupero tutti gli ISBN
-    $stmt = $pdo->query("SELECT isbn, titolo FROM libri");
+    // 1. Recupero tutti gli ISBN dal DB
+    $stmt = $pdo->query("SELECT isbn FROM libri WHERE isbn IS NOT NULL AND isbn != ''");
     $libri = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo "Trovati " . count($libri) . " libri nel database.\n\n";
+    echo "Totale libri nel DB: " . count($libri) . "\n";
+
+    // 2. Identifico solo quelli che MANCANO
+    $isbnsDaScaricare = [];
+    $giaPresenti = 0;
 
     foreach ($libri as $libro) {
-        $isbn = $libro['isbn'];
-        $titolo = $libro['titolo'];
-        
-        // Percorsi file possibili
+        $isbn = trim($libro['isbn']);
         $pathPng = $saveDir . $isbn . '.png';
         $pathJpg = $saveDir . $isbn . '.jpg';
 
-        // 2. Controllo se esiste già
         if (file_exists($pathPng) || file_exists($pathJpg)) {
-            echo "[ESISTE] $isbn - $titolo\n";
-            continue;
+            $giaPresenti++;
+        } else {
+            $isbnsDaScaricare[] = $isbn;
         }
+    }
 
-        echo "[MANCA]  $isbn - $titolo... ";
+    echo "Già presenti: $giaPresenti\n";
+    echo "Da scaricare: " . count($isbnsDaScaricare) . "\n\n";
 
-        // 3. Fetch da Google Books API
-        $apiUrl = "https://www.googleapis.com/books/v1/volumes?q=isbn:" . $isbn;
+    if (empty($isbnsDaScaricare)) {
+        echo "Nessun libro da scaricare. Fine.";
+        echo "</pre>";
+        exit;
+    }
+
+    // 3. Suddivido gli ISBN in pacchetti (Batch)
+    $batches = array_chunk($isbnsDaScaricare, $batchSize);
+    $totalBatches = count($batches);
+
+    foreach ($batches as $index => $batchIsbns) {
+        $currentBatchNum = $index + 1;
+        echo "Processing Batch $currentBatchNum di $totalBatches (" . count($batchIsbns) . " ISBN)...\n";
+
+        // 4. Costruisco la query con OR (isbn:AAA OR isbn:BBB ...)
+        $queryParts = [];
+        foreach ($batchIsbns as $isbn) {
+            $queryParts[] = "isbn:" . $isbn;
+        }
+        $queryString = implode(' OR ', $queryParts);
         
-        // Context per evitare blocchi user-agent
+        // URL Encode della query
+        $encodedQuery = urlencode($queryString);
+        
+        // Costruzione URL API (maxResults è fondamentale qui)
+        $apiUrl = "https://www.googleapis.com/books/v1/volumes?q=" . $encodedQuery . "&maxResults=" . count($batchIsbns);
+
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
@@ -55,63 +82,73 @@ try {
         ]);
 
         $json = @file_get_contents($apiUrl, false, $context);
-
+        
         if ($json === FALSE) {
-            echo "ERRORE connessione API.\n";
+            echo " - ERRORE nella richiesta API per questo batch.\n";
             continue;
         }
 
         $data = json_decode($json, true);
-        $scaricato = false;
 
-        // 4. LOGICA MIGLIORATA: Cicla su tutti gli items, non solo il primo
-        if (isset($data['items']) && is_array($data['items'])) {
-            foreach ($data['items'] as $item) {
-                
-                // Se questo item ha le immagini
-                if (isset($item['volumeInfo']['imageLinks'])) {
-                    $links = $item['volumeInfo']['imageLinks'];
+        if (!isset($data['items'])) {
+            echo " - Nessun risultato trovato per questo gruppo di ISBN.\n";
+            continue; // Passa al prossimo batch
+        }
+
+        // 5. Processo i risultati del batch
+        $scaricatiBatch = 0;
+
+        foreach ($data['items'] as $item) {
+            $volInfo = $item['volumeInfo'];
+            
+            // Cerco l'immagine
+            if (isset($volInfo['imageLinks'])) {
+                $links = $volInfo['imageLinks'];
+                $imageUrl = $links['extraLarge'] ?? $links['large'] ?? $links['medium'] ?? $links['small'] ?? $links['thumbnail'] ?? null;
+
+                if ($imageUrl) {
+                    $imageUrl = str_replace('http://', 'https://', $imageUrl);
                     
-                    // Cerca la qualità migliore disponibile (stessa logica del tuo JS)
-                    $imageUrl = $links['extraLarge'] 
-                             ?? $links['large'] 
-                             ?? $links['medium'] 
-                             ?? $links['small'] 
-                             ?? $links['thumbnail'] 
-                             ?? $links['smallThumbnail'] 
-                             ?? null;
-
-                    if ($imageUrl) {
-                        // Forza HTTPS
-                        $imageUrl = str_replace('http://', 'https://', $imageUrl);
-
-                        // Scarica l'immagine
-                        $imageContent = @file_get_contents($imageUrl, false, $context);
-
-                        if ($imageContent) {
-                            // Salva sempre come PNG per uniformità nello script, o mantieni estensione originale se preferisci
-                            if (file_put_contents($pathPng, $imageContent)) {
-                                echo "TROVATO e SALVATO ($isbn.png).\n";
-                                $scaricato = true;
-                                break; // Esce dal ciclo foreach degli items appena trova un'immagine valida
+                    // PROBLEMA: Google restituisce i libri, ma non sappiamo in che ordine.
+                    // Dobbiamo cercare tra gli identifier del risultato quale ISBN corrisponde 
+                    // a uno dei nostri ISBN richiesti nel batch ($batchIsbns).
+                    
+                    $matchedIsbn = null;
+                    if (isset($volInfo['industryIdentifiers'])) {
+                        foreach ($volInfo['industryIdentifiers'] as $identifier) {
+                            if (in_array($identifier['identifier'], $batchIsbns)) {
+                                $matchedIsbn = $identifier['identifier'];
+                                break;
                             }
+                        }
+                    }
+
+                    // Se abbiamo trovato a quale ISBN corrisponde questa immagine
+                    if ($matchedIsbn) {
+                        $imageContent = @file_get_contents($imageUrl, false, $context);
+                        if ($imageContent) {
+                            file_put_contents($saveDir . $matchedIsbn . '.png', $imageContent);
+                            echo "   -> Salvato: $matchedIsbn\n";
+                            $scaricatiBatch++;
+                            
+                            // Rimuovo l'ISBN dalla lista del batch per evitare doppi salvataggi se Google duplica
+                            $key = array_search($matchedIsbn, $batchIsbns);
+                            if ($key !== false) unset($batchIsbns[$key]);
                         }
                     }
                 }
             }
         }
-
-        if (!$scaricato) {
-            echo "Nessuna immagine trovata nei risultati API.\n";
-        }
         
-        // Piccola pausa per evitare rate limit (Google API è sensibile)
-        usleep(200000); 
+        echo " - Batch completato. Scaricati: $scaricatiBatch\n";
+        
+        // Pausa tra i batch (non tra i singoli libri)
+        sleep(1); 
     }
 
 } catch (PDOException $e) {
-    echo "Errore Database: " . $e->getMessage();
+    echo "Errore DB: " . $e->getMessage();
 }
 
-echo "\nOperazione completata.</pre>";
+echo "\nOperazione Bulk Completata.</pre>";
 ?>
