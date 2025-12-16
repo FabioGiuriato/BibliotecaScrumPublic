@@ -56,7 +56,7 @@ if (isset($_SESSION['nome_utente'])) {
                         <img src="./public/assets/base_pfp.png" alt="pfp" class="navbar_icon navbar_pfp">
                     </a>
             <?php    } else { ?>
-                <a href="./login" class="navbar_link instrument-sans-semibold text_underline">Log-In</a>
+                <a href="./login" class="navbar_link instrument-sans-semibold text_underline">Accedi</a>
             <?php     } ?>
 
         </div>

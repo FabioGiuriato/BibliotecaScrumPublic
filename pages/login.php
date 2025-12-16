@@ -70,42 +70,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$title = "Accedi";
+$page_css = "./public/css/style_forms.css";
 ?>
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-</head>
-<body>
-
     <?php include './src/includes/header.php'; ?>
-    <?php include './src/includes/navbar.php'; ?>
 
-    <div class="container">
-        <h2>Accedi</h2>
+    <div class="form_container_1">
+        <h2 class="form_title_1">Accedi</h2>
 
         <?php if (!empty($error_msg)): ?>
             <div class="error"><?php echo htmlspecialchars($error_msg); ?></div>
         <?php endif; ?>
 
         <form method="post">
-            <label>Username, Email o Codice Fiscale</label>
-            <input name="username" type="text" placeholder="Inserisci credenziali" required value="<?php echo htmlspecialchars($user_input ?? ''); ?>">
+            <label class="form_1_label">Username, Email o Codice Fiscale</label>
+            <input class="form_1_input_sring" name="username" type="text" placeholder="Inserisci credenziali" required value="<?php echo htmlspecialchars($user_input ?? ''); ?>">
             
-            <label>Password</label>
-            <input name="password" type="password" placeholder="Password" required>
+            <label class="form_1_label">Password</label>
+            <input class="form_1_input_sring" name="password" type="password" placeholder="Password" required>
+            <a id="form_1_sublabel" href="./password-reset">Password dimenticata?</a>
             
-            <button type="submit">Login</button>
+            <button class="form_1_btn_submit" type="submit">Login</button>
         </form>
 
         <br>
         <a href="./signup">Registrati</a>
-        <br>
-        <a href="./password-reset">Password dimenticata?</a>
     </div>
 
-    <?php include './src/includes/footer.php'; ?>
-
+</div>
 </body>
 </html>
