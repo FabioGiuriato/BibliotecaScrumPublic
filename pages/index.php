@@ -45,7 +45,7 @@ foreach ($catPopolari as $cat) {
     $categoriePopolari[$cat['categoria']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// ---------------- PRESTITI ATTIVI ----------------
+// ---------------- PRESTITI ATTIVI --------------------
 $prestiti_attivi = [];
 if ($codice) {
     // Anche qui calcoliamo la media globale del libro prestato
