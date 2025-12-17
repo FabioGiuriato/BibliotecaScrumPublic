@@ -45,7 +45,7 @@ if (isset($_SESSION['nome_utente'])) {
     </div>
     <div class="navbar_rigth">
 
-        <?php if (checkAccess('amministratore') || checkAccess('biblitecario')) { ?>
+        <?php if (checkAccess('amministratore') || checkAccess('bibliotecario')) { ?>
             <div class="navbar_rigth_rigth">
                 <a href="./dashboard" class="navbar_link instrument-sans-semibold">Dashboard <?php echo checkAccess('amministratore') ? 'Amministratore' : 'Bibliotecario'?></a>
             </div>
