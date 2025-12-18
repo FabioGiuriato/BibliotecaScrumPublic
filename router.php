@@ -19,6 +19,7 @@ $whitelist = [
     '/password-reset'=> 'pages/passwreset.php',
     '/verifica'=> 'pages/verifica.php',
     '/libro'=> 'pages/libro.php',
+    '/profilo' => 'pages/profilo.php',
 
     //temp
     '/cover-fetcher'=> 'coverFetcher.php',
