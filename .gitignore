@@ -2,4 +2,6 @@
 composer.lock
 .git
 .gitignore
+.idea
 /vendor
+/public/bookCover

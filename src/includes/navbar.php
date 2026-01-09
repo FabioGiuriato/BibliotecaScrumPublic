@@ -1,4 +1,6 @@
 <?php
+require_once 'security.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -31,18 +33,24 @@ if (isset($_SESSION['nome_utente'])) {
             <img src="./public/assets/icon_search_ligth.png" alt="Cerca" class="navbar_search_icon_mobile">
         </a>
         <div class="search_container">
-            <form class="search_container" action="">
+            <form class="search_container" action="search" method="GET">
                 <button type="submit" class="search_icon_button">
                     <img src="./public/assets/icon_search_dark.png" alt="Cerca" class="navbar_search_icon">
                 </button>
-                <input type="text" placeholder="Search.." name="search" class="navbar_search_input instrument-sans-semibold">
+                <input type="text" placeholder="Search.." name="search"
+                    class="navbar_search_input instrument-sans-semibold"
+                    value="<?= isset($_GET['search']) ? $_GET['search'] : '' ?>">
             </form>
         </div>
     </div>
     <div class="navbar_rigth">
-        <div class="navbar_rigth_rigth">
-            <a href="#" class="navbar_link instrument-sans-semibold">Dashboard</a>
-        </div>
+
+        <?php if (checkAccess('amministratore') || checkAccess('bibliotecario')) { ?>
+            <div class="navbar_rigth_rigth">
+                <a href="./dashboard" class="navbar_link instrument-sans-semibold">Dashboard <?php echo checkAccess('amministratore') ? 'Amministratore' : 'Bibliotecario'?></a>
+            </div>
+        <?php } ?>
+
 
         <div class="navbar_rigth_left">
             <a href="#" class="navbar_link_img instrument-sans-semibold">
@@ -50,13 +58,13 @@ if (isset($_SESSION['nome_utente'])) {
             </a>
 
             <?php
-            if (isset($_SESSION['logged']) && $_SESSION['logged'] === true){?>
-                    <a href="#" class="navbar_link_img instrument-sans-semibold" id="navbar_pfp">
-                        <img src="./public/assets/base_pfp.png" alt="pfp" class="navbar_icon navbar_pfp">
-                    </a>
-            <?php    } else { ?>
+            if (isset($_SESSION['logged']) && $_SESSION['logged'] === true) { ?>
+                <a href="./profilo" class="navbar_link_img instrument-sans-semibold" id="navbar_pfp">
+                    <img src="./public/assets/base_pfp.png" alt="pfp" class="navbar_icon navbar_pfp">
+                </a>
+            <?php } else { ?>
                 <a href="./login" class="navbar_link instrument-sans-semibold text_underline">Accedi</a>
-            <?php     } ?>
+            <?php } ?>
 
         </div>
 

@@ -13,7 +13,7 @@ il database é impostato per backupare alle 2:00 UTC+1 sul file backup_db.sql
 
 ### Come connettersi al database
 1. Installare DBeaver o qualsiasi interfaccia per la connessione ad un database remoto (porta 3306)
-2. Connettersi al database come URL **5.tcp.eu.ngrok.io:15473** (jdbc:mysql://5.tcp.eu.ngrok.io:15473) usando le credenziali fornite
+2. Connettersi al database come URL **7.tcp.eu.ngrok.io:12748** (jdbc:mysql://7.tcp.eu.ngrok.io:12748) usando le credenziali fornite
    
 ## Creare nuove pagine
 1. Per creare nuove pagine piazzare il file .php della pagina dentro la cartella /pages
@@ -50,4 +50,76 @@ per gestire il login (o qualsiasi ricerca tramite password e username, codice fi
 CALL CheckLoginUser('mario@email.it', 'passwordSegreta', @esito);
 
 SELECT @esito;
+
+### Per vedere il profilo utente sulla pagina iniziale (index)
+
+``` sql
+SELECT u.username, u.codice_fiscale
+FROM utenti
+WHERE codice_fiscale = :codice_fiscale
+-- oppure
+-- WHERE codice_alfanumerico = :codice_alfanumerico;
+```
+
+### Per vedere i Prestiti attuali attivi
+
+``` sql
+SELECT p.id_prestito, l.titolo, c.id_copia, c.copertina,
+       p.data_prestito, p.data_scadenza
+FROM prestiti p
+JOIN copie c ON p.ic_copia = c.id_copia
+JOIN libri l ON c.isbn = l.isbn
+WHERE p.codice_alfanumerico = :codice_alfanumerico
+  AND p.data_restituzione IS NULL;
+```
+
+### Per vedere le ultime uscite che hanno copie disponibili
+
+``` sql
+SELECT DISTINCT l.isbn, l.titolo, l.descrizione
+FROM libri l
+JOIN copie c ON c.isbn = l.isbn
+WHERE c.disponibile = TRUE
+LIMIT 10;
+```
+
+### Per vedere libri consigliati se utente è loggato
+
+``` sql
+SELECT lc.isbn, l.titolo
+FROM libri_consigliati lc
+JOIN libri l ON lc.isbn = l.isbn
+WHERE lc.codice_alfanumerico = :codice_alfanumerico
+ORDER BY lc.n_consigli DESC
+HAVING n_consigli <= 2
+LIMIT 10;
+```
+
+### Per vedere libri popolari se utente non è loggato
+
+``` sql
+SELECT r.isbn, l.titolo,
+       AVG(r.voto) AS voto_medio,
+       COUNT(*) AS totale_recensioni
+FROM recensioni r
+JOIN libri l ON r.isbn = l.isbn
+GROUP BY r.isbn
+ORDER BY voto_medio DESC, totale_recensioni DESC
+LIMIT 10;
+```
+
+### Libri popolari con soglia minima di recensioni
+
+``` sql
+SELECT r.isbn, l.titolo,
+       AVG(r.voto) AS voto_medio,
+       COUNT(*) AS totale_recensioni
+FROM recensioni r
+JOIN libri l ON r.isbn = l.isbn
+GROUP BY r.isbn
+HAVING COUNT(*) >= 3
+ORDER BY voto_medio DESC, totale_recensioni DESC
+LIMIT 10;
+```
+
 
