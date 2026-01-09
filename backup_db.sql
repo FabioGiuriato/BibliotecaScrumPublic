@@ -1186,7 +1186,7 @@ INSERT INTO `utenti` VALUES
 ('000009','StudenteProva','Studente','Prova','RSSMRA85T10A562S','studente.prova@example.com','$2y$10$Th5mE4AGgEpZnMd34rG0quP0yvwg1etVtGS2vh.bb/7WHBj3UEpxC',0,0,0,0,1,'2025-12-17'),
 ('00000A','DocenteProva','Docente','Prova','BNCLRN80A01H501U','docente.prova@example.com','$2y$10$iaWHpX4iHgrXeTjxBDKjZOSI7SCTFaG3fRiWoofRIXMOvowyBYKX.',0,0,0,0,1,'2025-12-17'),
 ('00000B','BibliotecarioProva','Bibliotecario','Prova','PLCNDR75B12C345D','bibliotecario.prova@example.com','$2y$10$Dvprn8Xd8io3QsQT3iGuJu9KJ0QZmv/o8iYnpf4WoWn1b.bNH6brC',0,0,0,0,1,'2025-12-17'),
-('00000C','AdminProva','Amministratore','Prova','VRDNRD70D22F789G','admin.prova@example.com','$2y$10$sT/MMNj60JJowywNPuOA8OqIgqUWvQrTFlOrlIu/20UCbgUeJaPlq',0,0,0,0,1,'2025-12-17');
+('00000C','AdminProva24','Amministratore','Prova','VRDNRD70D22F789G','admin.prova@example.com','$2y$10$sT/MMNj60JJowywNPuOA8OqIgqUWvQrTFlOrlIu/20UCbgUeJaPlq',0,0,0,0,1,'2025-12-17');
 /*!40000 ALTER TABLE `utenti` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1347,4 +1347,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-08  2:00:04
+-- Dump completed on 2026-01-09  2:00:03
