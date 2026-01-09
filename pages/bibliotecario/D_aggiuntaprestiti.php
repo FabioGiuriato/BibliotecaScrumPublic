@@ -103,7 +103,7 @@ require_once './src/includes/navbar.php';
             <br>
 
             <button type="submit">Conferma Prestito</button>
-            <a href="dashboard-prestiti.php">Annulla</a>
+            <a href="../bibliotecario/dashboard-gestioneprestiti">Ritorna gestione</a>
         </form>
     </div>
 

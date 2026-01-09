@@ -22,7 +22,6 @@ if (isset($pdo)) {
             exit;
         }
 
-        // Query con triplo JOIN: prestiti -> utenti | prestiti -> copie -> libri
         $query = "SELECT 
                     p.id_prestito, 
                     u.nome, 
@@ -52,9 +51,11 @@ require_once './src/includes/navbar.php';
     <div class="page_contents">
         <h2>Gestione Prestiti</h2>
 
-        <p><a href="dashboard-aggiuntaprestiti.php"><strong>+ Registra Nuovo Prestito</strong></a></p>
+        <p>
+            <a href="../bibliotecario/dashboard-aggiuntaprestiti">Registra Nuovo Prestito</a>
+        </p>
 
-        <table border="1" style="width:100%; border-collapse: collapse;">
+        <table>
             <thead>
             <tr>
                 <th>ID</th>
@@ -69,7 +70,9 @@ require_once './src/includes/navbar.php';
             </thead>
             <tbody>
             <?php if (empty($prestitiAttivi)): ?>
-                <tr><td colspan="8" style="text-align:center;">Nessun prestito attivo.</td></tr>
+                <tr>
+                    <td colspan="8">Nessun prestito attivo.</td>
+                </tr>
             <?php else: ?>
                 <?php foreach ($prestitiAttivi as $p): ?>
                     <tr>
@@ -79,15 +82,23 @@ require_once './src/includes/navbar.php';
                         <td><?= $p['data_prestito'] ?></td>
                         <td><?= $p['data_scadenza'] ?></td>
                         <td><?= $p['num_rinnovi'] ?></td>
-                        <form method="POST">
-                            <td>
+                        <td>
+                            <form method="POST">
                                 <input type="date" name="data_fine" value="<?= date('Y-m-d') ?>">
-                            </td>
-                            <td>
-                                <input type="hidden" name="restituisci_id" value="<?= $p['id_prestito'] ?>">
-                                <button type="submit">Restituisci</button>
-                            </td>
-                        </form>
+                        </td>
+                        <td>
+                            <input type="hidden" name="restituisci_id" value="<?= $p['id_prestito'] ?>">
+                            <button type="submit">Restituisci</button>
+
+                            <a href="dettagli-prestito.php?id=<?= $p['id_prestito'] ?>">
+                                Dettagli
+                            </a>
+
+                            <a href="gestione-multe.php?id_prestito=<?= $p['id_prestito'] ?>">
+                                Multe
+                            </a>
+                            </form>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
