@@ -25,9 +25,6 @@ if (checkAccess('amministratore')) { ?>
         </div>
 
         <div>
-            <a href="bibliotecario/dashboard-prestiti">Dashboard Prestiti</a>
-        </div>
-        <div>
             <a href="bibliotecario/dashboard-gestioneprestiti">Gestione Prestiti</a>
         </div>
         <div>
@@ -40,9 +37,6 @@ if (checkAccess('amministratore')) { ?>
     <div class="page_contents">
         Ciao Bibliotecario!
         <div class="page_contents">
-            <div>
-                <a href="bibliotecario/dashboard-prestiti">Dashboard Prestiti</a>
-            </div>
             <div>
                 <a href="bibliotecario/dashboard-gestioneprestiti">Gestione Prestiti</a>
             </div>
