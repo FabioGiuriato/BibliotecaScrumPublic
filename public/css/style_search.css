@@ -2,7 +2,7 @@
    1. SEZIONE RICERCA (HEADER)
 =============================== */
 .search_section_con {
-    background-color: var(--color_background_ligth); /* Era hardcoded, meglio usare la var */
+    background-color: var(--color_background_ligth);
     padding: 40px 30px;
     border-radius: 20px;
     display: flex;
@@ -12,7 +12,7 @@
     gap: 25px;
     font-size: 2rem;
     color: var(--color_text_dark_green);
-    box-shadow: 0 4px 6px rgba(63, 81, 53, 0.05); /* Un tocco di shadow soft */
+    box-shadow: 0 4px 6px rgba(63, 81, 53, 0.05);
     border: 1px solid rgba(63, 81, 53, 0.1);
 }
 
@@ -29,19 +29,20 @@
     align-items: center;
 }
 
+/* Fix Icona */
 .search_section_form_icon {
-    height: 32px;
+    height: 40px;
     width: auto;
     margin-right: 15px;
     object-fit: contain;
     display: inline-block;
-    opacity: 0.8;
 }
 
 h2 {
     font-family: "Young Serif", serif;
     font-size: 1.8rem;
     color: var(--color_accent_dark);
+    margin: 0;
 }
 
 /* Container dei bottoni (Tab) */
@@ -74,18 +75,21 @@ h2 {
 =============================== */
 #filter_form {
     width: 100%;
-    padding-top: 10px;
+    padding-top: 15px;
     border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 #filter_form h3 {
     font-family: "Instrument Sans", sans-serif;
     font-weight: 600;
     font-size: 1rem;
-    margin-bottom: 10px;
     color: var(--color_accent_medium);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-bottom: 10px;
 }
 
 #filter_form div {
@@ -103,14 +107,16 @@ h2 {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 10px;
+    padding: 8px 12px;
     background: white;
-    border-radius: 8px;
-    transition: background 0.2s;
+    border-radius: 10px;
+    transition: background 0.2s, transform 0.1s;
+    border: 1px solid transparent;
 }
 
 #filter_form label:hover {
     background: var(--color_accent_ligth);
+    transform: translateY(-1px);
 }
 
 /* Custom Checkbox accent */
@@ -121,7 +127,6 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-
 /* ===============================
    3. GRIGLIA DEI RISULTATI
 =============================== */
@@ -130,15 +135,12 @@ input[type="checkbox"] {
 #results_container_users {
     /* Grid layout per tenere tutto ordinato */
     display: grid;
-    /* Colonne che si adattano: minimo 300px, altrimenti si espandono */
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    /* Gap gestisce lo spazio, ignoriamo i margin del PHP */
-    gap: 20px;
+    /* Colonne automatiche: minimo 280px, altrimenti si espandono */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px; /* Spazio tra le card */
     margin-top: 20px;
     width: 100%;
-    /* Questo assicura che il contenitore abbracci il contenuto */
-    height: auto;
-    align-items: stretch;
+    align-items: stretch; /* Fondamentale: allunga le card alla stessa altezza */
 }
 
 /* Titoli delle sezioni */
@@ -146,9 +148,9 @@ input[type="checkbox"] {
     font-family: "Young Serif", serif;
     color: var(--color_accent_dark);
     font-size: 2rem;
-    margin-bottom: 10px;
-    margin-top: 30px; /* Un po' più di spazio sopra i titoli */
-    clear: both; /* Scaccia via eventuali elementi fluttuanti */
+    margin-bottom: 15px;
+    margin-top: 40px;
+    clear: both;
 }
 
 /* ===============================
@@ -162,19 +164,18 @@ input[type="checkbox"] {
     box-shadow: 0 4px 10px rgba(63, 81, 53, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-    /* --- OVERRIDE IMPORTANTE --- */
-    /* Usiamo !important per vincere sugli stili inline del PHP */
-    display: flex !important;
-    flex-direction: row !important; /* Forza orizzontale su desktop */
-    align-items: flex-start !important;
-    margin-bottom: 0 !important; /* Il margine lo gestisce la Grid (gap) */
-    height: auto !important; /* L'altezza si adatta al contenuto */
-    width: auto !important;
+    /* Override per layout orizzontale su desktop */
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 0;
+    height: 100%; /* Occupa tutta l'altezza della cella */
+    width: auto;
 }
 
 .book_card:hover, .author_card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(63, 81, 53, 0.15);
+    box-shadow: 0 10px 25px rgba(63, 81, 53, 0.15);
     background-color: #fff;
     z-index: 2;
 }
@@ -184,99 +185,170 @@ input[type="checkbox"] {
     border-radius: 8px;
     object-fit: cover;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    width: 80px !important;
-    height: 110px !important;
-    margin-right: 20px !important;
-    flex-shrink: 0; /* Impedisce all'immagine di schiacciarsi */
+    width: 90px;
+    height: 130px; /* Leggermente più grande */
+    margin-right: 20px;
+    flex-shrink: 0;
 }
 
 /* Contenuto testuale della card */
 .book_card div, .author_card div {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start; /* Allinea il testo a sinistra */
+    justify-content: center;
     width: 100%;
+}
+
+.book_card h3, .author_card h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+    color: var(--color_text_dark_green);
 }
 
 /* ===============================
    FIX GLOBALE EVIDENZIATORE
 =============================== */
-/* Questo rende l'evidenziatore carino in TUTTA la pagina */
 mark {
-    background-color: var(--color_accent_ligth); /* Il nostro verde pastello */
+    background-color: var(--color_accent_ligth);
     color: var(--color_text_dark_green);
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 0 4px;
     font-weight: 600;
 }
 
 /* ===============================
-   5. CARD UTENTI (Fix Layout)
+   5. CARD UTENTI (Fix Altezza & Layout)
 =============================== */
 .user_card {
-    background-color: #fff; /* Sfondo bianco per stacco */
-    border: 1px solid rgba(63, 81, 53, 0.1);
+    background-color: #fff;
+    border: 1px solid rgba(63, 81, 53, 0.15);
     border-radius: 16px;
-    padding: 25px; /* Più spazio interno */
+    padding: 25px;
     box-shadow: 0 4px 6px rgba(63, 81, 53, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-    /* --- REGOLE IMPORTANTI --- */
-    display: flex !important;
-    flex-direction: column !important; /* Impila tutto in verticale */
-    justify-content: space-between !important; /* Spinge il bottone in fondo */
-    align-items: flex-start !important; /* Allinea testo a sinistra */
-    height: 100% !important; /* Occupa tutta l'altezza della griglia */
-    margin-bottom: 0 !important; /* Via il margine inline del PHP */
-    gap: 10px; /* Spazio tra le righe di testo */
+    /* --- FLEXBOX MAGICO --- */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .user_card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(63, 81, 53, 0.1);
+    box-shadow: 0 10px 20px rgba(63, 81, 53, 0.1);
     border-color: var(--color_accent_medium);
 }
 
-/* Stile per le righe di testo (Username, Nome, Cognome) */
+.user_info_wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
 .user_card p {
     font-family: "Instrument Sans", sans-serif;
     color: var(--color_text_black);
-    font-size: 1rem;
-    margin: 0; /* Resetta i margini per usare il gap del flex */
-    width: 100%;
-    line-height: 1.5; /* Più leggibile */
-    border-bottom: 1px dashed rgba(0,0,0,0.05); /* Righetta divisoria cute */
-    padding-bottom: 8px;
-}
-
-.user_card p:last-of-type {
-    border-bottom: none; /* Niente riga sull'ultimo elemento */
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
+    padding-bottom: 5px;
 }
 
 .user_username {
-    font-size: 1.1rem !important;
-    color: var(--color_accent_dark) !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color_accent_dark);
+    margin-bottom: 5px;
+    display: block;
 }
 
 /* Bottone "Visualizza profilo" */
 .user_card a {
-    margin-top: 15px;
-    width: 100%; /* Bottone largo quanto la card */
-    padding: 10px 0;
-    background-color: var(--color_background_dark);
-    color: var(--color_text_dark_green);
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px 0;
+    background-color: var(--color_background_ligth);
+    color: var(--color_accent_dark);
+    border: 1px solid var(--color_accent_dark);
     border-radius: 10px;
     text-align: center;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     transition: all 0.2s ease;
     text-decoration: none;
-    align-self: center; /* Centrato */
+    display: block;
 }
 
 .user_card a:hover {
     background-color: var(--color_accent_dark);
-    color: var(--color_background_ligth); /* Diventa scuro al passaggio */
+    color: #fff;
     box-shadow: 0 4px 8px rgba(63, 81, 53, 0.2);
+}
+
+/* ===============================
+   6. RESPONSIVE MOBILE
+=============================== */
+@media (max-width: 768px) {
+    /* Header Stack */
+    .search_section_con {
+        padding: 30px 20px;
+        text-align: center;
+        align-items: center;
+    }
+
+    .search_section_form {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .search_section_form_left {
+        flex-direction: column;
+        gap: 10px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .search_section_form_icon {
+        margin-right: 0;
+        height: 50px; /* Icona più grande su mobile */
+    }
+
+    /* Bottoni centrati */
+    .search_buttons_container {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .section_btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Filtri centrati */
+    #filter_form div {
+        justify-content: center;
+    }
+
+    /* Card Libri/Autori diventano verticali */
+    .book_card, .author_card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 25px;
+    }
+
+    .book_card img, .author_card img {
+        margin-right: 0;
+        margin-bottom: 15px;
+        width: 120px;
+        height: auto;
+    }
+
+    .book_card div, .author_card div {
+        align-items: center; /* Testo centrato */
+    }
 }
