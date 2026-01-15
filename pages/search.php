@@ -69,6 +69,7 @@ if (!empty($search_query)) {
 ?>
 
 <?php
+// ---------------- HTML HEADER ----------------
 $title = "Ricerca - " . $_GET['search'];
 $path = "./";
 $page_css = "./public/css/style_search.css";

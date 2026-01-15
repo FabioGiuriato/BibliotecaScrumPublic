@@ -1,5 +1,5 @@
 /* ===============================
-   1. SEZIONE RICERCA (HEADER)
+   SEZIONE RICERCA (HEADER)
 =============================== */
 .search_section_con {
     background-color: var(--color_background_ligth);
@@ -69,9 +69,11 @@ h2 {
     border-color: var(--color_accent_ligth);
     color: var(--color_text_dark_green);
 }
+/* =============================== */
+
 
 /* ===============================
-   2. FILTRI (CHECKBOX)
+   FILTRI (CHECKBOX)
 =============================== */
 #filter_form {
     width: 100%;
@@ -126,9 +128,11 @@ input[type="checkbox"] {
     height: 16px;
     cursor: pointer;
 }
+/* =============================== */
+
 
 /* ===============================
-   3. GRIGLIA DEI RISULTATI
+   GRIGLIA DEI RISULTATI
 =============================== */
 #results_container_books,
 #results_container_authors,
@@ -152,9 +156,11 @@ input[type="checkbox"] {
     margin-top: 40px;
     clear: both;
 }
+/* =============================== */
+
 
 /* ===============================
-   4. CARD DEI RISULTATI (Book & Author)
+   CARD DEI RISULTATI (Book & Author)
 =============================== */
 .book_card, .author_card {
     background-color: var(--color_background_ligth);
@@ -206,9 +212,6 @@ input[type="checkbox"] {
     color: var(--color_text_dark_green);
 }
 
-/* ===============================
-   FIX GLOBALE EVIDENZIATORE
-=============================== */
 mark {
     background-color: var(--color_accent_ligth);
     color: var(--color_text_dark_green);
@@ -216,9 +219,11 @@ mark {
     padding: 0 4px;
     font-weight: 600;
 }
+/* =============================== */
+
 
 /* ===============================
-   5. CARD UTENTI (Fix Altezza & Layout)
+   CARD UTENTI (Fix Altezza & Layout)
 =============================== */
 .user_card {
     background-color: #fff;
@@ -288,9 +293,11 @@ mark {
     color: #fff;
     box-shadow: 0 4px 8px rgba(63, 81, 53, 0.2);
 }
+/* =============================== */
+
 
 /* ===============================
-   6. RESPONSIVE MOBILE
+   RESPONSIVE MOBILE
 =============================== */
 @media (max-width: 768px) {
     /* Header Stack */
