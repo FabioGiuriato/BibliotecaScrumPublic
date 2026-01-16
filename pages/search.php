@@ -127,7 +127,7 @@ require_once './src/includes/navbar.php';
                      data-autore_cognome="<?= $book['autore_cognome'] ?>">
 
                     <div class="card_image_wrapper">
-                        <img src="public/bookCover<?= $book['isbn'] ?? 'src/assets/placeholder' ?>.jpg" alt="Copertina">
+                        <img src="<?= getCoverPath($book['isbn']) ?>" alt="Cover" class="book_cover">
                     </div>
 
                     <div class="card_content">
@@ -154,7 +154,7 @@ require_once './src/includes/navbar.php';
                      data-autore_cognome="<?= $author_book['autore_cognome'] ?>">
 
                     <div class="card_image_wrapper">
-                        <img src="public/bookCover<?= $author_book['isbn'] ?? 'src/assets/placeholder' ?>.jpg" alt="Copertina">
+                        <img src="<?= getCoverPath($author_book['isbn']) ?>" alt="Cover" class="book_cover">
                     </div>
 
                     <div class="card_content">
