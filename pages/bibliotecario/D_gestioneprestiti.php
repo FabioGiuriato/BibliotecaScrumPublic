@@ -24,7 +24,7 @@ if (isset($pdo)) {
                     'id' => $_POST['restituisci_id']
             ]);
 
-            header("Location: dashboard-gestioneprestiti.php?success=1");
+            header("Location: dashboard-gestioneprestiti");
             exit;
         }
 
