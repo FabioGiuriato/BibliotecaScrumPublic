@@ -1,15 +1,11 @@
 <?php
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
+if (session_status() === PHP_SESSION_NONE) session_start();
 require_once 'db_config.php';
 
 $MAX_CHARS = 1000;
 
 $messaggio_db = "";
-$server_message = ""; 
+$server_message = "";
 $libro = null;
 $autori = [];
 $categorie = [];
@@ -19,46 +15,39 @@ $mediaVoto = 0;
 $totaleRecensioni = 0;
 
 $lista_biblioteche = [];
-$ids_disponibili = []; 
+$ids_disponibili = [];
 $ids_in_prestito = [];
-$elenco_copie_dettagliato = []; 
-
-$userHasAnyLoan = false; 
+$elenco_copie_dettagliato = [];
+$userHasAnyLoan = false;
 
 $isbn = $_GET['isbn'] ?? null;
 $uid = $_SESSION['codice_utente'] ?? null;
 $query_uid = $uid ? $uid : 'GUEST';
 
-if (!$isbn) {
-    die("<h1>Errore</h1><p>ISBN non specificato.</p>");
-}
+if (!$isbn) die("<h1>Errore</h1><p>ISBN non specificato.</p>");
 
-// --- GESTIONE AZIONI POST ---
+// --- Gestione POST (prenotazioni e recensioni) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
     if (!$uid) {
-         header("Location: ./libro?isbn=" . $isbn . "&status=login_needed");
-         exit;
+        header("Location: ./libro?isbn=" . $isbn . "&status=login_needed"); exit;
     }
+  
+    // PRENOTAZIONE COPIA
 
-    // 1. PRENOTAZIONE COPIA (LOGICA AGGIORNATA PER CODA/ASSEGNAZIONE IMMEDIATA)
     if (isset($_POST['action']) && $_POST['action'] === 'prenota_copia') {
         $id_copia_target = filter_input(INPUT_POST, 'id_copia', FILTER_VALIDATE_INT);
-
         if ($id_copia_target) {
             try {
                 $pdo->beginTransaction();
 
-                // A. Controllo se l'utente ha già UNA copia di questo libro in prestito (non restituita)
                 $stmt_loan_check = $pdo->prepare("
                     SELECT 1 
                     FROM prestiti p 
                     JOIN copie c ON p.id_copia = c.id_copia 
-                    WHERE p.codice_alfanumerico = :uid 
-                    AND c.isbn = :isbn 
-                    AND p.data_restituzione IS NULL
+                    WHERE p.codice_alfanumerico = :uid AND c.isbn = :isbn AND p.data_restituzione IS NULL
                 ");
-                $stmt_loan_check->execute(['uid' => $uid, 'isbn' => $isbn]);
+                $stmt_loan_check->execute(['uid'=>$uid,'isbn'=>$isbn]);
+                if ($stmt_loan_check->rowCount()>0) { $pdo->rollBack(); header("Location: ./libro?isbn=$isbn&status=loan_active_error"); exit; }
 
                 if ($stmt_loan_check->rowCount() > 0) {
                     $pdo->rollBack();
@@ -81,12 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Se ha già il libro assegnato pronto al ritiro, non glielo togliamo automaticamente.
                 $stmt_cleanup = $pdo->prepare("
                     DELETE p FROM prenotazioni p 
-                    INNER JOIN copie c ON p.id_copia = c.id_copia 
-                    WHERE p.codice_alfanumerico = :uid 
-                    AND c.isbn = :isbn 
-                    AND p.data_assegnazione IS NULL
+                    INNER JOIN copie c ON p.id_copia=c.id_copia 
+                    WHERE p.codice_alfanumerico=:uid AND c.isbn=:isbn AND p.data_assegnazione IS NULL
                 ");
-                $stmt_cleanup->execute(['uid' => $uid, 'isbn' => $isbn]);
+                $stmt_cleanup->execute(['uid'=>$uid,'isbn'=>$isbn]);
 
                 // D. Controllo Disponibilità Reale per Assegnazione Immediata vs Coda
                 // Una copia è "occupata" se:
@@ -132,44 +119,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2. RECENSIONI
     if (isset($_POST['submit_review'])) {
-        $voto = filter_input(INPUT_POST, 'voto', FILTER_VALIDATE_INT);
-        $raw_commento = $_POST['commento'] ?? '';
-        $commento = trim(filter_var($raw_commento, FILTER_SANITIZE_STRING));
+        $voto = filter_input(INPUT_POST,'voto',FILTER_VALIDATE_INT);
+        $commento = trim(filter_var($_POST['commento'] ?? '', FILTER_SANITIZE_STRING));
         $mode = $_POST['mode'] ?? 'insert';
 
-        if (strlen($commento) > $MAX_CHARS) {
-             header("Location: ./libro?isbn=" . $isbn . "&status=toolong");
-             exit;
-        } elseif ($voto < 1 || $voto > 5 || empty($commento)) {
-             header("Location: ./libro?isbn=" . $isbn . "&status=invalid");
-             exit;
-        } else {
+        if (strlen($commento)>$MAX_CHARS) { header("Location: ./libro?isbn=$isbn&status=toolong"); exit; }
+        elseif ($voto<1||$voto>5||empty($commento)) { header("Location: ./libro?isbn=$isbn&status=invalid"); exit; }
+        else {
             try {
-                if ($mode === 'update') {
-                    $stmt = $pdo->prepare("UPDATE recensioni SET voto = ?, commento = ?, data_commento = NOW() WHERE isbn = ? AND codice_alfanumerico = ?");
-                    $stmt->execute([$voto, $commento, $isbn, $uid]);
-                    $msg_type = "updated";
+                if($mode==='update'){
+                    $stmt=$pdo->prepare("UPDATE recensioni SET voto=?, commento=?, data_commento=NOW() WHERE isbn=? AND codice_alfanumerico=?");
+                    $stmt->execute([$voto,$commento,$isbn,$uid]); $msg_type="updated";
                 } else {
-                    $chk = $pdo->prepare("SELECT 1 FROM recensioni WHERE isbn = ? AND codice_alfanumerico = ?");
-                    $chk->execute([$isbn, $uid]);
+                    $chk=$pdo->prepare("SELECT 1 FROM recensioni WHERE isbn=? AND codice_alfanumerico=?");
+                    $chk->execute([$isbn,$uid]);
                     if (!$chk->fetch()) {
-                        $stmt = $pdo->prepare("INSERT INTO recensioni (isbn, codice_alfanumerico, voto, commento, data_commento) VALUES (?, ?, ?, ?, NOW())");
-                        $stmt->execute([$isbn, $uid, $voto, $commento]);
-                        $msg_type = "created";
-                    } else {
-                        $msg_type = "exists";
-                    }
+                        $stmt=$pdo->prepare("INSERT INTO recensioni (isbn,codice_alfanumerico,voto,commento,data_commento) VALUES(?,?,?,?,NOW())");
+                        $stmt->execute([$isbn,$uid,$voto,$commento]); $msg_type="created";
+                    } else $msg_type="exists";
                 }
-                header("Location: ./libro?isbn=" . $isbn . "&status=" . $msg_type);
-                exit;
-            } catch (PDOException $e) {
-                header("Location: ./libro?isbn=" . $isbn . "&status=error");
-                exit;
+                header("Location: ./libro?isbn=$isbn&status=$msg_type"); exit;
+            } catch(PDOException $e){
+                header("Location: ./libro?isbn=$isbn&status=error"); exit;
             }
         }
     }
 }
-
 // --- MESSAGGI STATO ---
 if (isset($_GET['status'])) {
     switch ($_GET['status']) {
@@ -292,26 +267,42 @@ try {
             }
         }
 
-    } else {
-        $messaggio_db = "Libro non trovato.";
+    // --- NUOVA SEZIONE: "Chi ha letto questo ha letto anche..." ---
+    $consigliati = [];
+    $sqlCoocurrence = "
+        SELECT c.isbn, l.titolo, COUNT(*) as count_users
+        FROM prestiti p1
+        JOIN prestiti p2 ON p1.codice_alfanumerico=p2.codice_alfanumerico
+        JOIN copie c ON p2.id_copia=c.id_copia
+        JOIN libri l ON c.isbn=l.isbn
+        WHERE p1.id_copia IN (SELECT id_copia FROM copie WHERE isbn=:isbn) 
+        AND c.isbn != :isbn
+        AND c.isbn NOT IN (SELECT al.isbn FROM autore_libro al JOIN autore_libro al2 ON al.id_autore=al2.id_autore WHERE al2.isbn=:isbn)
+        GROUP BY c.isbn
+        ORDER BY count_users DESC
+        LIMIT 5
+    ";
+    $stmt = $pdo->prepare($sqlCoocurrence);
+    $stmt->execute(['isbn'=>$isbn]);
+    $cooc = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Calcolo percentuale
+    $totalUsersStmt = $pdo->prepare("SELECT COUNT(DISTINCT codice_alfanumerico) FROM prestiti p JOIN copie c ON p.id_copia=c.id_copia WHERE c.isbn=:isbn");
+    $totalUsersStmt->execute(['isbn'=>$isbn]);
+    $totalUsers = (int)$totalUsersStmt->fetchColumn();
+    foreach($cooc as $c) {
+        $perc = $totalUsers>0 ? round(($c['count_users']/$totalUsers)*100) : 0;
+        $consigliati[] = ['isbn'=>$c['isbn'],'titolo'=>$c['titolo'],'percent'=>$perc];
     }
 
-} catch (PDOException $e) {
-    $messaggio_db = "Errore DB: " . $e->getMessage();
-}
+} catch(PDOException $e){ $messaggio_db="Errore DB: ".$e->getMessage(); }
 
-function getCoverPath($isbn) {
-    $localPath = "public/bookCover/$isbn.png";
-    return file_exists($localPath) ? $localPath : "public/assets/book_placeholder.jpg";
-}
+function getCoverPath($isbn){ $localPath="public/bookCover/$isbn.png"; return file_exists($localPath)?$localPath:"public/assets/book_placeholder.jpg"; }
+function getPfpPath($userId){ $path="public/pfp/$userId.png"; return file_exists($path)?$path.'?v='.time():"public/assets/base_pfp.png"; }
 
-function getPfpPath($userId) {
-    $path = "public/pfp/$userId.png";
-    return file_exists($path) ? $path . '?v=' . time() : "public/assets/base_pfp.png";
-}
 ?>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
@@ -364,6 +355,75 @@ function getPfpPath($userId) {
     .leaflet-pane.leaflet-popup-pane { z-index: 10000 !important; }
     .leaflet-control-resetmap { background: white; padding: 6px 10px; border-radius: 4px; border: 1px solid #888; cursor: pointer; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); margin-top: 5px; }
     .leaflet-control-resetmap:hover { background: #f0f0f0; }
+    .related_books_section {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .related_books_title {
+        font-family: 'Young Serif', serif;
+        color: #2c3e50;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+
+    .related_books_list {
+        display: flex;
+        flex-wrap: nowrap; /* Non andare a capo */
+        gap: 15px;
+        overflow-x: auto;  /* Scroll orizzontale */
+        padding-bottom: 10px;
+        -webkit-overflow-scrolling: touch; /* Scroll più fluido su iOS */
+    }
+
+    .related_books_list::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .related_books_list::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 4px;
+    }
+
+    .related_book_card {
+        flex: 0 0 200px; /* Larghezza fissa per ogni card */
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 10px;
+        background: #fff;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .related_book_card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+
+    .related_book_cover {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    .related_book_title {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 4px;
+        color: #2c3e50;
+    }
+
+    .related_book_percent {
+        font-size: 0.85rem;
+        color: #555;
+    }
+
+
 </style>
 
 <?php
@@ -443,6 +503,27 @@ $title = $libro['titolo'] ?? 'Libro';
                     <button id="load-more-copies" class="load_more_btn" style="display:none;" onclick="renderNextBatch()">Mostra altre copie</button>
                 </div>
             </div>
+            <!-- Dopo la mappa e prima delle recensioni -->
+            <?php if($uid): // mostra consigliati solo se loggato ?>
+                <div class="related_books_section">
+                    <h2 class="related_books_title">Chi ha letto questo ha letto anche...</h2>
+                    <?php if($consigliati): ?>
+                        <div class="related_books_list">
+                            <?php foreach($consigliati as $r): ?>
+                                <div class="related_book_card" onclick="window.location='./libro?isbn=<?= $r['isbn'] ?>'">
+                                    <img src="<?= getCoverPath($r['isbn']) ?>" alt="<?= htmlspecialchars($r['titolo']) ?>" class="related_book_cover">
+                                    <div class="related_book_title"><?= htmlspecialchars($r['titolo']) ?></div>
+                                    <div class="related_book_percent"><?= $r['percent'] ?>% degli utenti ha letto anche questo</div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p style="text-align:center; color:#888;">Nessun suggerimento disponibile per questo libro.</p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+
 
             <div class="reviews_section">
                 <h2 class="reviews_title">Recensioni (<?= $totaleRecensioni ?>)</h2>
