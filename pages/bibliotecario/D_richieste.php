@@ -45,7 +45,7 @@ if (isset($pdo)) {
     }
 }
 
-// GESTIONE AZIONI (POST) - (LOGICA INVARIATA)
+// GESTIONE AZIONI (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && isset($_POST['id_richiesta'])) {
         $action = $_POST['action'];
@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     case 'approva':
                         $stmt = $pdo->prepare("UPDATE richieste_bibliotecario SET stato = 'approvata' WHERE id_richiesta = ?");
                         $stmt->execute([$id_richiesta]);
-                        // Logica rinnovo standard (+7 alla scadenza attuale) come da tua richiesta precedente
                         $stmt_upd = $pdo->prepare("UPDATE prestiti SET data_scadenza = DATE_ADD(data_scadenza, INTERVAL 7 DAY), num_rinnovi = num_rinnovi + 1 WHERE id_prestito = ?");
                         $stmt_upd->execute([$id_prestito_target]);
                         break;
@@ -94,18 +93,28 @@ require_once './src/includes/navbar.php';
 ?>
 
 <style>
+    .page_contents { 
+        background-color: #fcfcfc; 
+        min-height: 90vh; 
+        padding-top: 30px; 
+        font-family: 'Instrument Sans', sans-serif;
+    }
+
     .dashboard-card {
         background: #fff;
         border-radius: 12px;
         box-shadow: 0 5px 20px rgba(0,0,0,0.05);
         border: none;
-        overflow: hidden; /* Per i bordi arrotondati della tabella */
+        overflow: hidden;
+        margin-bottom: 20px;
     }
+
     .page-header {
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         padding-bottom: 15px;
         border-bottom: 2px solid #f0f2f5;
     }
+
     .table-custom th {
         background-color: #f8f9fa;
         color: #6c757d;
@@ -115,18 +124,19 @@ require_once './src/includes/navbar.php';
         letter-spacing: 0.5px;
         border-bottom: 2px solid #e9ecef;
         padding: 15px;
+        vertical-align: middle;
     }
     .table-custom td {
         padding: 15px;
         vertical-align: middle;
         border-bottom: 1px solid #f0f2f5;
+        color: #444;
     }
-    .table-custom tr:last-child td {
-        border-bottom: none;
-    }
+    .table-custom tr:last-child td { border-bottom: none; }
+
     .user-avatar-placeholder {
-        width: 35px;
-        height: 35px;
+        width: 38px;
+        height: 38px;
         background-color: #e9ecef;
         color: #495057;
         border-radius: 50%;
@@ -134,18 +144,9 @@ require_once './src/includes/navbar.php';
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        margin-right: 10px;
+        margin-right: 12px;
     }
-    .book-title {
-        color: #2c3e50;
-        font-weight: 600;
-        display: block;
-    }
-    .action-btn-group {
-        display: flex;
-        gap: 5px;
-        justify-content: flex-end;
-    }
+
     .status-badge {
         padding: 6px 12px;
         border-radius: 20px;
@@ -153,36 +154,60 @@ require_once './src/includes/navbar.php';
         font-weight: 600;
         display: inline-flex;
         align-items: center;
+        gap: 6px;
+    }
+    .status-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-approved { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-rejected { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* Bottoni con testo */
+    .btn-accetta {
+        background-color: #198754; 
+        color: white; 
+        border: none; 
+        padding: 8px 15px; 
+        border-radius: 8px; 
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
         gap: 5px;
     }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-approved { background-color: #d4edda; color: #155724; }
-    .status-rejected { background-color: #f8d7da; color: #721c24; }
+    .btn-accetta:hover { background-color: #157347; transform: translateY(-1px); color: white; }
     
+    .btn-rifiuta {
+        background-color: white; 
+        color: #dc3545; 
+        border: 1px solid #dc3545; 
+        padding: 8px 15px; 
+        border-radius: 8px; 
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-rifiuta:hover { background-color: #dc3545; color: white; transform: translateY(-1px); }
+
     .empty-state {
         text-align: center;
-        padding: 50px 20px;
+        padding: 60px 20px;
         color: #adb5bd;
-    }
-    .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        display: block;
     }
 </style>
 
-<div class="page_contents" style="background-color: #fcfcfc; min-height: 90vh; padding-top: 30px;">
+<div class="page_contents">
     <div class="container-fluid" style="max-width: 1400px;">
         
-        <div class="page-header d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="mb-1 fw-bold text-dark"><i class="bi bi-inbox-fill text-primary me-2"></i>Gestione Richieste</h2>
-                <p class="text-muted mb-0">Visualizza e gestisci le richieste di rinnovo degli utenti.</p>
-            </div>
-            </div>
+        <div class="page-header">
+            <h2 class="mb-1 fw-bold text-dark"><i class="bi bi-inbox-fill text-primary me-2"></i>Gestione Richieste</h2>
+            <p class="text-muted mb-0">Visualizza e gestisci le richieste di rinnovo degli utenti.</p>
+        </div>
         
         <?php if ($messaggio): ?>
-            <div class="alert alert-danger shadow-sm border-0 rounded-3">
+            <div class="alert alert-danger shadow-sm border-0 rounded-3 mb-4">
                 <i class="bi bi-exclamation-circle-fill me-2"></i> <?= htmlspecialchars($messaggio) ?>
             </div>
         <?php endif; ?>
@@ -192,13 +217,13 @@ require_once './src/includes/navbar.php';
                 <table class="table table-custom mb-0">
                     <thead>
                         <tr>
-                            <th scope="col" style="width: 5%;">ID</th>
-                            <th scope="col" style="width: 20%;">Utente</th>
-                            <th scope="col" style="width: 25%;">Libro & Prestito</th>
-                            <th scope="col" style="width: 15%;">Tempistiche</th>
-                            <th scope="col" style="width: 10%;">Stato</th>
-                            <th scope="col" style="width: 15%;">Affidabilità</th>
-                            <th scope="col" style="width: 10%; text-align: right;">Azioni</th>
+                            <th scope="col">ID</th>
+                            <th scope="col">Utente</th>
+                            <th scope="col">Libro & Prestito</th>
+                            <th scope="col">Tempistiche</th>
+                            <th scope="col">Stato</th>
+                            <th scope="col">Affidabilità</th>
+                            <th scope="col" class="text-end">Azioni</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -206,91 +231,64 @@ require_once './src/includes/navbar.php';
                             <tr>
                                 <td colspan="7">
                                     <div class="empty-state">
-                                        <i class="bi bi-clipboard-check"></i>
-                                        <h5>Tutto tranquillo!</h5>
-                                        <p>Non ci sono richieste in sospeso al momento.</p>
+                                        <i class="bi bi-clipboard-check fs-1"></i>
+                                        <h5>Nessuna richiesta</h5>
                                     </div>
                                 </td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($richieste as $req): ?>
                                 <tr>
-                                    <td><span class="badge bg-light text-dark border">#<?= htmlspecialchars($req['id_richiesta']) ?></span></td>
-                                    
+                                    <td><span class="badge bg-light text-dark border">#<?= $req['id_richiesta'] ?></span></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="user-avatar-placeholder">
-                                                <?= strtoupper(substr($req['nome'], 0, 1)) ?>
-                                            </div>
+                                            <div class="user-avatar-placeholder"><?= strtoupper(substr($req['nome'], 0, 1)) ?></div>
                                             <div>
-                                                <div class="fw-bold text-dark"><?= htmlspecialchars($req['cognome'] . ' ' . $req['nome']) ?></div>
-                                                <div class="text-muted small" style="font-family: monospace;"><?= htmlspecialchars($req['codice_alfanumerico']) ?></div>
+                                                <div class="fw-bold"><?= htmlspecialchars($req['cognome'] . ' ' . $req['nome']) ?></div>
+                                                <small class="text-muted"><?= $req['codice_alfanumerico'] ?></small>
                                             </div>
                                         </div>
                                     </td>
-
                                     <td>
-                                        <span class="book-title"><?= htmlspecialchars($req['titolo']) ?></span>
-                                        <span class="text-muted small">
-                                            <i class="bi bi-upc-scan me-1"></i>Prestito #<?= htmlspecialchars($req['id_prestito']) ?>
-                                        </span>
+                                        <div class="fw-bold"><?= htmlspecialchars($req['titolo'] ) ?></div>
+                                        <small class="text-muted">Prestito #<?= $req['id_prestito'] ?></small>
                                     </td>
-
                                     <td>
                                         <div class="small">
-                                            <div class="mb-1" title="Data richiesta">
-                                                <i class="bi bi-calendar-event me-1 text-secondary"></i> Richiesto: <?= date('d/m/y', strtotime($req['data_richiesta'])) ?>
-                                            </div>
-                                            <div class="text-danger fw-bold" title="Scadenza attuale del prestito">
-                                                <i class="bi bi-hourglass-split me-1"></i> Scade: <?= date('d/m/y', strtotime($req['scadenza_attuale_prestito'])) ?>
-                                            </div>
+                                            <i class="bi bi-calendar-event me-1"></i> Rich: <?= date('d/m/y', strtotime($req['data_richiesta'])) ?><br>
+                                            <span class="text-danger fw-bold"><i class="bi bi-hourglass-split"></i> Scade: <?= date('d/m/y', strtotime($req['scadenza_attuale_prestito'])) ?></span>
                                         </div>
                                     </td>
-
                                     <td>
-                                        <?php 
-                                        if($req['stato'] == 'approvata') {
-                                            echo '<span class="status-badge status-approved"><i class="bi bi-check-circle-fill"></i> Approvata</span>';
-                                        } elseif($req['stato'] == 'rifiutata') {
-                                            echo '<span class="status-badge status-rejected"><i class="bi bi-x-circle-fill"></i> Rifiutata</span>';
-                                        } else {
-                                            echo '<span class="status-badge status-pending"><i class="bi bi-clock-fill"></i> In Attesa</span>';
-                                        }
-                                        ?>
-                                    </td>
-
-                                    <td>
-                                        <?php if ($req['numero_multe'] > 0): ?>
-                                            <div class="d-flex align-items-center text-danger">
-                                                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
-                                                <div style="line-height: 1.2;">
-                                                    <div class="fw-bold"><?= $req['numero_multe'] ?> Multe</div>
-                                                    <small>Tot: €<?= number_format($req['totale_multe'], 2, ',', '.') ?></small>
-                                                </div>
-                                            </div>
+                                        <?php if($req['stato'] == 'approvata'): ?>
+                                            <span class="status-badge status-approved">Approvata</span>
+                                        <?php elseif($req['stato'] == 'rifiutata'): ?>
+                                            <span class="status-badge status-rejected">Rifiutata</span>
                                         <?php else: ?>
-                                            <span class="text-success small fw-bold">
-                                                <i class="bi bi-shield-check me-1 fs-5" style="vertical-align: middle;"></i> Regolare
-                                            </span>
+                                            <span class="status-badge status-pending">In Attesa</span>
                                         <?php endif; ?>
                                     </td>
-
                                     <td>
-                                        <div class="action-btn-group">
+                                        <?php if ($req['numero_multe'] > 0): ?>
+                                            <span class="text-danger fw-bold"><i class="bi bi-warning"></i> <?= $req['numero_multe'] ?> Multe</span>
+                                        <?php else: ?>
+                                            <span class="text-success small fw-bold">Regolare</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-end">
                                             <?php if ($req['stato'] === 'in_attesa'): ?>
-                                                <form method="post" class="d-flex gap-1">
-                                                    <input type="hidden" name="id_richiesta" value="<?= htmlspecialchars($req['id_richiesta']) ?>">
-                                                    
-                                                    <button type="submit" name="action" value="approva" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="tooltip" title="Approva (+7gg)">
-                                                        <i class="bi bi-check-lg"></i>
+                                                <form method="post" class="m-0 d-flex gap-2">
+                                                    <input type="hidden" name="id_richiesta" value="<?= $req['id_richiesta'] ?>">
+                                                    <button type="submit" name="action" value="approva" class="btn-accetta">
+                                                        <i class="bi bi-check-lg"></i> Accetta
                                                     </button>
-                                                    
-                                                    <button type="submit" name="action" value="rifiuta" class="btn btn-outline-danger btn-sm shadow-sm" data-bs-toggle="tooltip" title="Rifiuta" onclick="return confirm('Sei sicuro di voler rifiutare questa richiesta?');">
-                                                        <i class="bi bi-x-lg"></i>
+                                                    <button type="submit" name="action" value="rifiuta" class="btn-rifiuta" onclick="return confirm('Rifiutare?');">
+                                                        <i class="bi bi-x-lg"></i> Rifiuta
                                                     </button>
                                                 </form>
                                             <?php else: ?>
-                                                <span class="text-muted small fst-italic">Nessuna azione</span>
+                                                <span class="text-muted small">--</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -303,15 +301,5 @@ require_once './src/includes/navbar.php';
         </div>
     </div>
 </div>
-
-<script>
-    // Abilita i tooltip di Bootstrap (se inclusi nel tuo header/footer)
-    document.addEventListener("DOMContentLoaded", function(){
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    });
-</script>
 
 <?php require_once './src/includes/footer.php'; ?>
