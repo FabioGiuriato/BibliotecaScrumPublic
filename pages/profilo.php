@@ -373,7 +373,6 @@ $page_css = "./public/css/style_profilo.css";
 require './src/includes/header.php';
 require './src/includes/navbar.php';
 ?>
-    <link rel="stylesheet" href="./public/css/style_profile.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <div class="info_line">
@@ -384,16 +383,16 @@ require './src/includes/navbar.php';
             ?>
             <form action="profilo" method="post" enctype="multipart/form-data" id="form-pfp">
                 <input type="hidden" name="submit_pfp" value="1">
-                <input type="file" name="pfp_upload" id="pfp_upload" accept="image/png, image/jpeg" class="display-none" onchange="document.getElementById('form-pfp').submit()">
+                <input type="file" name="pfp_upload" id="pfp_upload" accept="image/png, image/jpeg" style="display:none;" onchange="document.getElementById('form-pfp').submit()">
                 <div class="pfp-wrapper" onclick="document.getElementById('pfp_upload').click()">
-                    <img class="info_pfp" alt="Pfp" src="<?= $pfpPath . '?v=' . time() ?>">
+                    <img class="info_pfp" alt="Foto Profilo" src="<?= $pfpPath . '?v=' . time() ?>">
                     <div class="pfp-overlay">
-                        <span class="pfp-icon">📷</span>
                         <span class="pfp-text">Modifica</span>
                     </div>
                 </div>
             </form>
-            <button class="btn-tessera" onclick="apriTessera()">Tessera Utente</button>
+
+            <button class="btn-tessera" onclick="apriTessera()">Visualizza Tessera</button>
 
             <div class="edit-container-wrapper">
                 <div class="edit-row" id="row-username">
@@ -403,13 +402,13 @@ require './src/includes/navbar.php';
                 <div class="edit-row">
                     <input type="email" id="inp-email" class="edit-input" value="<?= htmlspecialchars($utente['email'] ?? '') ?>" data-original="<?= htmlspecialchars($utente['email'] ?? '') ?>" placeholder="Email" oninput="handleEmailInput(this)">
                 </div>
-                <form method="post" class="email-expand-box" id="box-email-otp">
-                    <input type="text" name="otp_code" id="inp-otp" class="edit-input otp-locked" placeholder="Codice" disabled autocomplete="off">
-                    <button type="button" id="btn-email-action" class="btn-action-email" onclick="handleEmailAction()">Invia</button>
+                <form method="post" id="box-email-otp" style="display:none; width:100%;">
+                    <input type="text" name="otp_code" id="inp-otp" class="edit-input" placeholder="Codice verifica" disabled autocomplete="off">
+                    <button type="button" id="btn-email-action" class="btn-tessera" style="margin-top:10px;" onclick="handleEmailAction()">Invia Codice</button>
                     <input type="hidden" name="confirm_email_final" value="1">
                 </form>
                 <div class="edit-row" id="row-livello">
-                    <input type="number" min="0" max="2" id="inp-livello" class="edit-input" value="<?= $utente['livello_privato'] ?? '' ?>" data-original="<?= $utente['livello_privato'] ?? '' ?>" placeholder="Livello sicurezza">
+                    <input type="number" min="0" max="2" id="inp-livello" class="edit-input" value="<?= $utente['livello_privato'] ?? '' ?>" data-original="<?= $utente['livello_privato'] ?? '' ?>" placeholder="Livello privacy (0-2)">
                     <button type="button" id="btn-livello" class="btn-slide" onclick="ajaxSaveLivello()">Salva</button>
                 </div>
                 <div class="edit-row"><input type="text" class="edit-input" disabled value="<?= htmlspecialchars($utente['nome'] ?? '') ?>"></div>
@@ -419,21 +418,15 @@ require './src/includes/navbar.php';
 
             <?php if (!empty($multe_attive)): ?>
                 <div class="fine-container">
-                    <h4 class="fine-header-title">
-                        Multe da saldare (<?= count($multe_attive) ?>)
-                    </h4>
+                    <h4 class="fine-header-title">Da Saldare</h4>
                     <?php foreach ($multe_attive as $m): ?>
                         <div class="fine-card">
                             <div class="fine-info">
-                                    <span class="fine-title" title="<?= htmlspecialchars($m['titolo']) ?>">
-                                        <?= htmlspecialchars($m['titolo']) ?>
-                                    </span>
-                                <span class="fine-meta" title="<?= htmlspecialchars($m['causale']) ?>">
-                                        <?= htmlspecialchars($m['causale']) ?>
-                                    </span>
+                                <span class="fine-title"><?= htmlspecialchars($m['titolo']) ?></span>
+                                <span class="fine-meta"><?= htmlspecialchars($m['causale']) ?></span>
                             </div>
-                            <div class="fine-actions">
-                                <span class="fine-price">€ <?= number_format($m['importo'], 2) ?></span>
+                            <div style="text-align:right;">
+                                <div class="fine-price">€ <?= number_format($m['importo'], 2) ?></div>
                                 <button class="btn-pay" onclick="apriPagamento(<?= $m['id_multa'] ?>, '<?= number_format($m['importo'], 2) ?>')">Paga</button>
                             </div>
                         </div>
@@ -443,67 +436,65 @@ require './src/includes/navbar.php';
         </div>
 
         <div class="info_column extend_all">
+
             <div class="section">
-                <h2>Badge</h2>
-                <div class="grid">
-                    <?php if (!empty($badges)): ?>
-                        <?php foreach ($badges as $b): ?>
-                            <div class="book-item">
-                                <?= badgeIconHtmlProfile($b) ?>
-                                <div class="book-meta">
-                                    <div class="book_main_title">
-                                        <?= htmlspecialchars($b['nome']) ?>
-                                    </div>
-
-                                    <!---
-                                    <div class="book_authors">
-                                        Livello: <strong><?= intval($b['livello']) ?></strong>
-                                        <?php if (!empty($b['target_numerico'])): ?>
-                                            &nbsp;•&nbsp; Target: <?= intval($b['target_numerico']) ?>
-                                        <?php endif; ?>
-                                    </div> --->
-
-                                    <?php if (!empty($b['descrizione'])): ?>
-                                        <div class="book_desc_text">
-                                            <?= nl2br(htmlspecialchars($b['descrizione'])) ?>
-                                        </div>
-                                    <?php endif; ?>
+                <h2>Panoramica</h2>
+                <div class="stats-grid">
+                    <div class="stat-card-total">
+                        <span class="stat-label">Libri Letti</span>
+                        <strong class="stat-value-total"><?= $totale_libri_letti ?></strong>
+                    </div>
+                    <div class="stat-card-monthly">
+                        <span class="stat-label">Media Mensile</span>
+                        <strong class="stat-value-monthly"><?= $media_mensile ?></strong>
+                    </div>
+                </div>
+                <?php if ($storico_stat): ?>
+                    <div class="chart-container">
+                        <?php foreach ($storico_stat as $s):
+                            $percentuale = ($max_libri_mese > 0) ? ($s['qta'] / $max_libri_mese) * 100 : 0;
+                            ?>
+                            <div class="chart-row">
+                                <div class="chart-label"><?= $s['mese'] ?></div>
+                                <div class="chart-bar-bg">
+                                    <div class="chart-bar-fill" style="width: <?= $percentuale ?>%;"></div>
                                 </div>
+                                <div class="chart-value"><?= $s['qta'] ?></div>
                             </div>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <h4 class="no-items-text">Nessun badge acquisito</h4>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="section">
-                <h2>Prestiti in corso</h2>
+                <h2>Prestiti attivi</h2>
                 <div class="grid">
                     <?php if ($prestiti_attivi): foreach ($prestiti_attivi as $libro):
                         $scadenza_data = formatCounter($libro['data_scadenza']);
                         $rinnovi_effettuati = $libro['num_rinnovi'] ?? 0;
                         ?>
                         <div class="book-item">
-                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Libro"></a>
-                            <div class="book-meta" style="color: <?= $scadenza_data[1] ?>;"><?= $scadenza_data[0] ?></div>
+                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Cover"></a>
+                            <div class="book-meta">
+                                <div><?= $scadenza_data[0] ?></div>
+                            </div>
                             <div class="mini-actions">
                                 <?php if ($libro['stato_richiesta'] == 'in_attesa'): ?>
-                                    <button class="btn-mini btn-mini-pending" disabled>In attesa...</button>
+                                    <span class="link-mini link-pending">Richiesta inviata</span>
                                 <?php elseif ($rinnovi_effettuati >= 1): ?>
-                                    <button class="btn-mini btn-mini-limit" disabled title="Hai già esteso questo prestito">Limite raggiunto</button>
+                                    <span class="link-mini link-pending">Max rinnovi</span>
                                 <?php else: ?>
-                                    <form method="POST" action="profilo" class="w-100">
+                                    <form method="POST" action="profilo">
                                         <input type="hidden" name="action" value="richiedi_estensione">
                                         <input type="hidden" name="id_prestito" value="<?= $libro['id_prestito'] ?>">
                                         <input type="hidden" name="scadenza_attuale" value="<?= $libro['data_scadenza'] ?>">
-                                        <button type="submit" class="btn-mini btn-mini-action">Estendi (+)</button>
+                                        <button type="submit" class="link-mini link-action">Estendi prestito</button>
                                     </form>
                                 <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; else: ?>
-                        <h4 class="no-items-text">Nessun prestito attivo</h4>
+                        <p style="color:#888;">Nessun prestito in corso.</p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -512,80 +503,52 @@ require './src/includes/navbar.php';
                 <h2>Prenotazioni</h2>
                 <div class="grid">
                     <?php if ($prenotazioni): foreach ($prenotazioni as $libro):
-                        $data_scadenza_pren = date('Y-m-d', strtotime($libro['data_prenotazione'] . ' + 2 days'));
-                        $scadenza_data = formatCounter($data_scadenza_pren);
                         $queue_count = $libro['utenti_davanti'];
-                        $queue_msg = ($queue_count == 0) ? '<span class="queue-success">Sei il prossimo!</span>' : "<span class='queue-wait'>$queue_count utenti davanti</span>";
+                        $queue_msg = ($queue_count == 0) ? 'Prossimo disponibile' : "$queue_count persone prima di te";
                         ?>
                         <div class="book-item">
-                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Libro"></a>
-                            <div class="book-meta" style="color: <?= $scadenza_data[1] ?>;"><?= $scadenza_data[0] ?></div>
-                            <div class="book-meta"><?= $queue_msg ?></div>
+                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Cover"></a>
+                            <div class="book-meta">
+                                <div><?= $queue_msg ?></div>
+                            </div>
                             <div class="mini-actions">
-                                <form method="POST" action="profilo" class="w-100">
+                                <form method="POST" action="profilo">
                                     <input type="hidden" name="action" value="annulla_prenotazione">
                                     <input type="hidden" name="id_prenotazione" value="<?= $libro['id_prenotazione'] ?>">
-                                    <button type="submit" class="btn-mini btn-mini-danger">Annulla</button>
+                                    <button type="submit" class="link-mini link-danger">Annulla</button>
                                 </form>
                             </div>
                         </div>
                     <?php endforeach; else: ?>
-                        <h4 class="no-items-text">Nessuna prenotazione attiva</h4>
+                        <p style="color:#888;">Nessuna prenotazione.</p>
                     <?php endif; ?>
                 </div>
             </div>
 
+            <?php if (!empty($badges)): ?>
+                <div class="section">
+                    <h2>Badge</h2>
+                    <div class="grid">
+                        <?php foreach ($badges as $b): ?>
+                            <div class="book-item">
+                                <?= badgeIconHtmlProfile($b) ?>
+                                <div class="book-meta" style="text-align:center; margin-top:5px;">
+                                    <?= htmlspecialchars($b['nome']) ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <div class="section">
-                <h2>Libri Letti</h2>
+                <h2>Storico letture</h2>
                 <div class="grid">
                     <?php if ($libri_letti): foreach ($libri_letti as $libro): ?>
                         <div class="book-item">
-                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Libro"></a>
+                            <a href="./libro?isbn=<?= htmlspecialchars($libro['isbn']) ?>" class="card cover-only"><img src="<?= getCoverPath($libro['isbn']) ?>" alt="Cover"></a>
                         </div>
-                    <?php endforeach; else: ?>
-                        <h4 class="no-items-text">Nessun libro ancora letto</h4>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2>Le Mie Statistiche</h2>
-                <div class="stats-grid">
-                    <div class="stat-card-total">
-                        <span class="stat-label">Libri Totali</span>
-                        <div class="stat-value-container">
-                            <strong class="stat-value-total"><?= $totale_libri_letti ?></strong>
-                            <span class="stat-subtext">Letti</span>
-                        </div>
-                    </div>
-                    <div class="stat-card-monthly">
-                        <span class="stat-label">Media Mensile</span>
-                        <div class="stat-value-container">
-                            <strong class="stat-value-monthly"><?= $media_mensile ?></strong>
-                            <span class="stat-subtext">Libri/mese</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-0">
-                    <h3 class="activity-title">Attività Recente</h3>
-                    <?php if ($storico_stat): ?>
-                        <div class="chart-container">
-                            <?php foreach ($storico_stat as $s):
-                                $percentuale = ($max_libri_mese > 0) ? ($s['qta'] / $max_libri_mese) * 100 : 0;
-                                $percentuale = max($percentuale, 5);
-                                ?>
-                                <div class="chart-row">
-                                    <div class="chart-label"><?= $s['mese'] ?></div>
-                                    <div class="chart-bar-bg">
-                                        <div class="chart-bar-fill" style="width: <?= $percentuale ?>%;"></div>
-                                    </div>
-                                    <div class="chart-value"><?= $s['qta'] ?> <?= $s['qta'] == 1 ? 'Libro' : 'Libri' ?></div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="no-data-msg">Nessun dato storico disponibile per generare il grafico.</div>
-                    <?php endif; ?>
+                    <?php endforeach; endif; ?>
                 </div>
             </div>
 
@@ -594,176 +557,149 @@ require './src/includes/navbar.php';
 
     <div id="modalTessera" class="modal-overlay">
         <div class="modal-content">
-            <span class="close-modal" onclick="chiudiTessera()">&times;</span>
             <div id="tessera-card">
-                <div class="tessera-header">BibliotecaScrum</div>
-                <div class="tessera-user"><?= htmlspecialchars(($utente['nome'] ?? '') . ' ' . ($utente['cognome'] ?? '')) ?></div>
+                <div class="tessera-header">Biblioteca Scrum</div>
+                <div class="tessera-label">Nome</div>
+                <div class="tessera-value"><?= htmlspecialchars(($utente['nome'] ?? '') . ' ' . ($utente['cognome'] ?? '')) ?></div>
+                <div class="tessera-label">Codice</div>
+                <div class="tessera-value"><?= htmlspecialchars($utente['codice_alfanumerico'] ?? $uid) ?></div>
                 <div class="tessera-barcode">*<?= strtoupper(htmlspecialchars($utente['codice_alfanumerico'] ?? $uid)) ?>*</div>
             </div>
             <div class="modal-actions">
-                <button class="btn-action btn-download" onclick="scaricaPNG()">Scarica PNG</button>
-                <button class="btn-action btn-print" onclick="stampa()">Stampa</button>
+                <button class="btn-action btn-print" onclick="chiudiTessera()">Chiudi</button>
+                <button class="btn-action btn-download" onclick="scaricaPNG()">Scarica</button>
             </div>
         </div>
     </div>
 
     <div id="modalPagamento" class="modal-overlay">
         <div class="modal-content">
-            <span class="close-modal" onclick="chiudiPagamento()">&times;</span>
-            <h3 class="mt-0 text-dark">Conferma Pagamento</h3>
-            <p class="mb-20 text-dark">Stai per pagare una multa di:</p>
-            <h2 class="mt-0 text-green">€ <span id="payAmountDisplay">0.00</span></h2>
-
-            <p class="text-grey mb-20" style="font-size:0.85em;">
-                Il pagamento sarà simulato e registrato immediatamente nel sistema.
-            </p>
+            <h3 style="font-family:'Young Serif', serif; color:var(--color_text_dark_green); margin-bottom:20px;">Conferma Pagamento</h3>
+            <p style="margin-bottom:10px;">Importo da saldare</p>
+            <h2 style="font-family:'Young Serif', serif; font-size:2.5rem; margin:0 0 30px 0;">€ <span id="payAmountDisplay">0.00</span></h2>
 
             <form method="POST" action="profilo">
                 <input type="hidden" name="action" value="paga_multa_user">
                 <input type="hidden" name="id_multa" id="payMultaId">
                 <div class="modal-actions">
                     <button type="button" class="btn-action btn-modal-cancel" onclick="chiudiPagamento()">Annulla</button>
-                    <button type="submit" class="btn-action btn-modal-pay">Conferma Pagamento</button>
+                    <button type="submit" class="btn-action btn-modal-pay">Conferma</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="notification-banner">
-        <span id="banner-msg" class="notification-text">Notifica</span>
-        <button class="close-btn-banner" onclick="hideNotification()">&times;</button>
+    <div id="notification-banner" style="position:fixed; bottom:20px; right:20px; background:#fff; border-left:4px solid var(--color_text_dark_green); padding:15px 25px; box-shadow:0 5px 20px rgba(0,0,0,0.1); transform:translateY(100px); transition:transform 0.3s; z-index:3000;">
+        <span id="banner-msg">Notifica</span>
     </div>
 
     <script>
+        /* Javascript Logica */
         let timeoutId;
         function showNotification(message) {
             const banner = document.getElementById('notification-banner');
-            const msgSpan = document.getElementById('banner-msg');
-            msgSpan.innerText = message;
-            banner.classList.add('show');
+            document.getElementById('banner-msg').innerText = message;
+            banner.style.transform = 'translateY(0)';
             if (timeoutId) clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => { hideNotification(); }, 5000);
+            timeoutId = setTimeout(() => { banner.style.transform = 'translateY(100px)'; }, 5000);
         }
-        function hideNotification() { document.getElementById('notification-banner').classList.remove('show'); }
 
-        const serverMessage = "<?= addslashes($messaggio_alert) ?>";
-        if (serverMessage.length > 0) { setTimeout(() => { showNotification(serverMessage); }, 500); }
+        // Iniezione messaggi PHP
+        <?php if(!empty($messaggio_alert)): ?>
+        setTimeout(() => { showNotification("<?= addslashes($messaggio_alert) ?>"); }, 500);
+        <?php endif; ?>
 
-        // GESTIONE USERNAME AJAX
+        // Logica Username
         const inpUser = document.getElementById('inp-username');
         const rowUser = document.getElementById('row-username');
-        const btnUser = document.getElementById('btn-user');
         inpUser.addEventListener('input', function() {
-            if (this.value !== this.dataset.original) {
-                rowUser.classList.add('changed');
-                btnUser.innerText = "Salva"; btnUser.classList.remove('btn-success-anim');
-            } else { rowUser.classList.remove('changed'); }
+            if(this.value !== this.dataset.original) rowUser.classList.add('changed');
+            else rowUser.classList.remove('changed');
         });
         async function ajaxSaveUsername() {
-            const newVal = inpUser.value;
-            const formData = new FormData();
-            formData.append('ajax_username', newVal);
+            const val = inpUser.value;
+            const formData = new FormData(); formData.append('ajax_username', val);
             try {
-                const response = await fetch(window.location.href, { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    showNotification(data.message);
-                    btnUser.innerText = "Fatto!";
-                    btnUser.classList.add('btn-success-anim');
-                    inpUser.dataset.original = newVal;
-                    setTimeout(() => { rowUser.classList.remove('changed'); }, 1500);
-                } else { showNotification(data.message); }
-            } catch (error) { showNotification("Errore di connessione."); }
+                let resp = await fetch(window.location.href, {method:'POST', body:formData});
+                let data = await resp.json();
+                showNotification(data.message);
+                if(data.status==='success') { inpUser.dataset.original = val; rowUser.classList.remove('changed'); }
+            } catch(e) { showNotification("Errore connessione"); }
         }
 
-        //GESTIONE LIVELLO PRIVATO
-        const inpLivello = document.getElementById("inp-livello");
-        const rowLivello = document.getElementById('row-livello');
-        const btnLivello = document.getElementById('btn-livello');
-        inpLivello.addEventListener('input', function() {
-            if (this.value !== this.dataset.original) {
-                rowLivello.classList.add('changed');
-                btnLivello.innerText = "Salva"; btnLivello.classList.remove('btn-success-anim');
-            } else { rowLivello.classList.remove('changed'); }
+        // Logica Livello
+        const inpLiv = document.getElementById('inp-livello');
+        const rowLiv = document.getElementById('row-livello');
+        inpLiv.addEventListener('input', function() {
+            if(this.value !== this.dataset.original) rowLiv.classList.add('changed');
+            else rowLiv.classList.remove('changed');
         });
         async function ajaxSaveLivello() {
-            const newVal = parseInt(inpLivello.value);
-            const formData = new FormData();
-            formData.append('ajax_livello', newVal);
+            const val = inpLiv.value;
+            const formData = new FormData(); formData.append('ajax_livello', val);
             try {
-                const response = await fetch(window.location.href, { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    showNotification(data.message);
-                    btnLivello.innerText = "Fatto!";
-                    btnLivello.classList.add('btn-success-anim');
-                    inpLivello.dataset.original = newVal;
-                    setTimeout(() => { rowLivello.classList.remove('changed'); }, 1500);
-                } else { showNotification(data.message); }
-            } catch (error) { showNotification("Errore di connessione.");
-                alert(error)}
+                let resp = await fetch(window.location.href, {method:'POST', body:formData});
+                let data = await resp.json();
+                showNotification(data.message);
+                if(data.status==='success') { inpLiv.dataset.original = val; rowLiv.classList.remove('changed'); }
+            } catch(e) { showNotification("Errore connessione"); }
         }
 
-        // GESTIONE EMAIL OTP
-        const boxEmailOtp = document.getElementById('box-email-otp');
-        const inpEmail = document.getElementById('inp-email');
-        const inpOtp = document.getElementById('inp-otp');
-        const btnEmailAction = document.getElementById('btn-email-action');
-        let emailStep = 1;
+        // Logica Email
         function handleEmailInput(input) {
-            if (input.value !== input.dataset.original) { boxEmailOtp.classList.add('open'); resetEmailState(); }
-            else { boxEmailOtp.classList.remove('open'); }
-        }
-        function resetEmailState() {
-            emailStep = 1; btnEmailAction.innerText = "Invia"; btnEmailAction.type = "button";
-            inpOtp.disabled = true; inpOtp.classList.add('otp-locked'); inpOtp.value = "";
+            const box = document.getElementById('box-email-otp');
+            if(input.value !== input.dataset.original) {
+                box.style.display = 'block';
+                document.getElementById('btn-email-action').innerText = "Invia Codice";
+                document.getElementById('btn-email-action').type = "button";
+                document.getElementById('inp-otp').disabled = true;
+            } else {
+                box.style.display = 'none';
+            }
         }
         async function handleEmailAction() {
-            if (emailStep === 1) {
+            const btn = document.getElementById('btn-email-action');
+            if(btn.type === 'button') {
                 const formData = new FormData();
                 formData.append('ajax_send_email_code', 1);
-                formData.append('email_dest', inpEmail.value);
-                btnEmailAction.innerText = "...";
+                formData.append('email_dest', document.getElementById('inp-email').value);
+                btn.innerText = "Attendi...";
                 try {
-                    const response = await fetch(window.location.href, { method: 'POST', body: formData });
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        showNotification(data.message);
-                        emailStep = 2; inpOtp.disabled = false; inpOtp.classList.remove('otp-locked'); inpOtp.focus();
-                        btnEmailAction.innerText = "Conferma"; btnEmailAction.type = "submit";
-                    } else { showNotification(data.message); btnEmailAction.innerText = "Invia"; }
-                } catch (e) { showNotification("Errore di rete."); btnEmailAction.innerText = "Invia"; }
+                    let resp = await fetch(window.location.href, {method:'POST', body:formData});
+                    let data = await resp.json();
+                    showNotification(data.message);
+                    if(data.status==='success') {
+                        document.getElementById('inp-otp').disabled = false;
+                        document.getElementById('inp-otp').focus();
+                        btn.innerText = "Conferma cambio";
+                        btn.type = "submit";
+                    } else { btn.innerText = "Invia Codice"; }
+                } catch(e) { showNotification("Errore invio"); }
             }
         }
 
-        // GESTIONE MODAL TESSERA
+        // Modals
         const modalTessera = document.getElementById('modalTessera');
+        const modalPay = document.getElementById('modalPagamento');
         function apriTessera() { modalTessera.style.display = 'flex'; }
         function chiudiTessera() { modalTessera.style.display = 'none'; }
-        function stampa() { window.print(); }
-        function scaricaPNG() {
-            const elemento = document.getElementById("tessera-card");
-            html2canvas(elemento, { backgroundColor: "#ffffff", scale: 3 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'Tessera_BibliotecaScrum.png';
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            });
-        }
-
-        // GESTIONE MODAL PAGAMENTO
-        const modalPay = document.getElementById('modalPagamento');
         function apriPagamento(id, amount) {
             document.getElementById('payMultaId').value = id;
             document.getElementById('payAmountDisplay').innerText = amount;
             modalPay.style.display = 'flex';
         }
         function chiudiPagamento() { modalPay.style.display = 'none'; }
-
-        // CHIUSURA MODAL CLICK ESTERNO
-        window.onclick = function(event) {
-            if (event.target == modalTessera) chiudiTessera();
-            if (event.target == modalPay) chiudiPagamento();
+        window.onclick = function(e) {
+            if(e.target == modalTessera) chiudiTessera();
+            if(e.target == modalPay) chiudiPagamento();
+        }
+        function scaricaPNG() {
+            html2canvas(document.getElementById("tessera-card"), {scale: 3}).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Tessera.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
         }
     </script>
 
