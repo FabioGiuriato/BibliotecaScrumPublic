@@ -1,4 +1,6 @@
 /* --- LAYOUT GENERALE --- */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap');
+
 .info_line {
     display: flex;
     flex-wrap: wrap;
@@ -349,27 +351,14 @@
 }
 
 /* Tessera Card Style */
-#tessera-card {
-    background: var(--color_background_ligth);
-    color: var(--color_text_black);
-    padding: 30px;
-    border: 1px solid var(--color_accent_ligth);
-    width: 320px;
-    margin: 20px auto;
-    text-align: left;
-    position: relative;
-    border-radius: 12px;
-}
-.tessera-header {
-    font-family: 'Young Serif', serif; font-size: 1.4rem;
-    margin-bottom: 30px; color: var(--color_text_dark_green);
-}
-.tessera-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 5px; }
-.tessera-value { font-family: 'Instrument Sans', sans-serif; font-size: 1.1rem; margin-bottom: 15px; color: #333; }
-.tessera-barcode {
-    font-family: monospace; font-size: 0.9rem; letter-spacing: 3px;
-    text-align: center; margin-top: 20px; color: #666;
-}
+.btn-tessera {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: var(--color_background_dark); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-family: 'Poppins', sans-serif; transition: background 0.3s; }
+#tessera-card { font-family: 'Poppins', sans-serif; background-color: var(--color_background_dark); color: var(--color_text_black); border: 2px solid #000; border-radius: 12px; width: 340px; height: 215px; margin: 25px auto; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); box-sizing: border-box; }
+.tessera-header { font-size: 1.1em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #000; padding-bottom: 8px; width: 100%; text-align: center; color: var(--color_text_dark_green)}
+.tessera-user { font-size: 1.3em; font-weight: 500; text-align: center; word-wrap: break-word; margin-top: 10px; }
+.tessera-barcode { font-family: 'Libre Barcode 39 Text', cursive; font-size: 42px; color: #000; line-height: 1; white-space: nowrap; margin-bottom: 5px; }
 
 /* Bottoni Modali */
 .modal_actions { margin-top: 30px; display: flex; gap: 10px; justify-content: center; }

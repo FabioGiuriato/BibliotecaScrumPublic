@@ -595,6 +595,8 @@ require './src/includes/navbar.php';
             letter-spacing: 0.5px;
         }
     </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <div class="info_line">
@@ -828,11 +830,8 @@ require './src/includes/navbar.php';
     <div id="modalTessera" class="modal-overlay">
         <div class="modal_content">
             <div id="tessera-card">
-                <div class="tessera-header">Biblioteca Scrum</div>
-                <div class="tessera-label">Nome</div>
-                <div class="tessera-value"><?= htmlspecialchars(($utente['nome'] ?? '') . ' ' . ($utente['cognome'] ?? '')) ?></div>
-                <div class="tessera-label">Codice</div>
-                <div class="tessera-value"><?= htmlspecialchars($utente['codice_alfanumerico'] ?? $uid) ?></div>
+                <div class="tessera-header">BibliotecaScrum</div>
+                <div class="tessera-user"><?= htmlspecialchars(($utente['nome'] ?? '') . ' ' . ($utente['cognome'] ?? '')) ?></div>
                 <div class="tessera-barcode">*<?= strtoupper(htmlspecialchars($utente['codice_alfanumerico'] ?? $uid)) ?>*</div>
             </div>
             <div class="modal_actions">
