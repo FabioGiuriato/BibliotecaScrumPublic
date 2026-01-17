@@ -35,11 +35,9 @@ if (!empty($search_query)) {
         $all_books = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($all_books as $row) {
-            // Ricerca Libri: per titolo o ISBN
             if (stripos($row['titolo'], $search_query) !== false || stripos($row['isbn'], $search_query) !== false) {
                 $books[$row['isbn']] = $row;
             }
-            // Ricerca Autori: per nome o cognome
             if (!empty($row['autore_nome']) && !empty($row['autore_cognome']) &&
                     (stripos($row['autore_nome'], $search_query) !== false || stripos($row['autore_cognome'], $search_query) !== false)) {
                 $authors[$row['isbn']] = $row;
@@ -77,7 +75,6 @@ function getCoverPath(string $isbn): string {
 ?>
 
 <?php
-// ---------------- HTML HEADER ----------------
 $title = "Ricerca - " . $_GET['search'];
 $path = "./";
 $page_css = "./public/css/style_search.css";
@@ -185,6 +182,8 @@ require_once './src/includes/navbar.php';
         <div id="results_container_users" class="results_grid">
             <?php foreach ($users as $user): ?>
                 <div class="result_card user_card"
+                     style="cursor: pointer;"
+                     onclick="location.href='/pubblico?username=<?= urlencode($user['username']) ?>'"
                      data-username="<?= $user['username'] ?>"
                      data-user_nome="<?= $user['nome'] ?>"
                      data-user_cognome="<?= $user['cognome'] ?>">
@@ -195,7 +194,7 @@ require_once './src/includes/navbar.php';
                             <?= highlight_text($user['nome'], $search_query) ?>
                             <?= highlight_text($user['cognome'], $search_query) ?>
                         </p>
-                        <a href="#" class="card_link_subtle">Vedi Profilo</a>
+                        <a href="/pubblico?username=<?= urlencode($user['username']) ?>" class="card_link_subtle">Vedi Profilo</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -216,7 +215,6 @@ require_once './src/includes/navbar.php';
     const rawSearchQuery = "<?= addslashes($search_query) ?>";
     const searchQuery = rawSearchQuery.toLowerCase();
 
-    // Gestione persistenza sezione
     if (document.referrer && !document.referrer.includes('search')) {
         sessionStorage.setItem('activeSearchSection', 'books');
     }
@@ -247,12 +245,10 @@ require_once './src/includes/navbar.php';
     btnBooks.addEventListener('click', showBooks);
     btnUsers.addEventListener('click', showUsers);
 
-    // LOGICA FILTRI
     function filterResults() {
         const activeFiltersBooks = Array.from(document.querySelectorAll('#filters_books input:checked')).map(cb => cb.name.replace('filtra_', ''));
         const activeFiltersUsers = Array.from(document.querySelectorAll('#filters_users input:checked')).map(cb => cb.name.replace('filtra_', ''));
 
-        // Filtro Libri
         let visibleBooks = 0;
         document.querySelectorAll('.book_card').forEach(card => {
             const show = activeFiltersBooks.some(field =>
@@ -263,7 +259,6 @@ require_once './src/includes/navbar.php';
         });
         document.getElementById('results_count_books').textContent = visibleBooks;
 
-        // Filtro Autori
         let visibleAuthors = 0;
         document.querySelectorAll('.author_card').forEach(card => {
             const show = activeFiltersBooks.some(field =>
@@ -274,7 +269,6 @@ require_once './src/includes/navbar.php';
         });
         document.getElementById('results_count_authors').textContent = visibleAuthors;
 
-        // Filtro Utenti
         let visibleUsers = 0;
         document.querySelectorAll('.user_card').forEach(card => {
             const show = activeFiltersUsers.some(field =>
