@@ -784,7 +784,8 @@ require './src/includes/navbar.php';
                             }
                         }
                         ?>
-                        <a href="./badge?id=<?= $idBadge ?>" class="badge-card-profile <?= $isUnlocked ? '' : 'locked' ?>">
+                    <!-- <a href="./badge?id=<?= $idBadge ?>" class="badge-card-profile <?= $isUnlocked ? '' : 'locked' ?>"> --->
+                        <a href="#badge_<?= $idBadge ?>" id="badge_<?= $idBadge ?>" class="badge-card-profile <?= $isUnlocked ? '' : 'locked' ?>">
                             <?php if ($isUnlocked): ?>
                                 <div class="status-badge-profile status-unlocked">Sbloccato</div>
                             <?php else: ?>
