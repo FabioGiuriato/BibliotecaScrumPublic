@@ -83,17 +83,14 @@ if(isset($_POST["logout"])){
                     value="<?= isset($_GET['search']) ? $_GET['search'] : '' ?>">
             </form>
         </div>
-        <div>
-            <form  action="<?= $path ?>game" method="POST">
-                <button type="submit">
-                    <img src="<?= $path ?>public/assets/icon_play.png" alt="Gioca">
-                </button>
-            </form>
-        </div>
     </div>
     
     <div class="navbar_rigth">
         <div class="navbar_rigth_left" style="display: flex; align-items: center;">
+
+        <a href="<?= $path ?>" class="navbar_link_img instrument-sans-semibold" id="navbar_logo">
+            <img src="<?= $path ?>public/assets/game.png" class="navbar_logo" alt="Gioca">
+        </a>
 
             <?php if (isset($_SESSION['logged']) && $_SESSION['logged'] === true) { ?>
                 <div class="dropdown">

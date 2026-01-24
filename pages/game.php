@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'db_config.php';
 
 // Inizializziamo il messaggio per evitare errori "Undefined variable"
-$messaggio_db = "";
+$messaggio_db = '';
 
 // --- 1. TEST SCRITTURA (INSERT) ---
 // Eseguiamo l'INSERT solo se la connessione ($pdo) esiste
@@ -17,28 +17,64 @@ if (isset($pdo)) {
         // Se l'utente è loggato, usiamo il suo nome nel DB, altrimenti "Utente Web"
         $nome_visitatore = isset($_SESSION['username']) ? $_SESSION['username'] . ' (Logged)' : 'Utente Web';
 
-        $stmt = $pdo->prepare("INSERT INTO visitatori (nome) VALUES (:nome)");
+        $stmt = $pdo->prepare('');
         $stmt->execute(['nome' => $nome_visitatore]);
-        $messaggio_db = "Nuovo accesso registrato nel DB!";
-        $class_messaggio = "success";
+        $messaggio_db = 'Nuovo accesso registrato nel DB!';
+        $class_messaggio = 'success';
     } catch (PDOException $e) {
-        $messaggio_db = "Errore Scrittura: " . $e->getMessage();
-        $class_messaggio = "error";
+        $messaggio_db = 'Errore Scrittura: ' . $e->getMessage();
+        $class_messaggio = 'error';
     }
 } else {
-    $messaggio_db = "Connessione al Database non riuscita (controlla db_config.php).";
-    $class_messaggio = "error";
+    $messaggio_db = 'Connessione al Database non riuscita (controlla db_config.php).';
+    $class_messaggio = 'error';
 }
-
 ?>
 
 <?php
 // ---------------- HTML HEADER ----------------
-$title = "Contatti - Biblioteca Scrum";
-$path = "./";
-$page_css = "./public/css/style_index.css";
+$title = 'Contatti - Biblioteca Scrum';
+$path = './';
+$page_css = './public/css/style_index.css';
 require './src/includes/header.php';
 require './src/includes/navbar.php';
 ?>
+
+<div>
+    <div id='bookscover'>
+        <div id='book1'></div>
+        <div id='book2'></div>
+        <div id='book3'></div>
+        <div id='book4'></div>
+    </div>
+
+    <div id='playcontainer'>
+        <div id='cont1'></div>
+        <div id='cont2'></div>
+        <div id='cont3'></div>
+        <div id='cont4'></div>
+    </div>
+
+    <div id='titoli'>
+        <div id='title1'></div>
+        <div id='title2'></div>
+        <div id='title3'></div>
+        <div id='title4'></div>
+    </div>
+    
+    <div id='autori'>
+        <div id='auth1'></div>
+        <div id='auth2'></div>
+        <div id='auth3'></div>
+        <div id='auth4'></div>
+    </div>
+    
+    <div id='generi'>
+        <div id='gen1'></div>
+        <div id='gen2'></div>
+        <div id='gen3'></div>
+        <div id='gen4'></div>
+    </div>
+</div>
 
 <?php require_once './src/includes/footer.php'; ?>
