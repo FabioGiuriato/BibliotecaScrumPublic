@@ -88,6 +88,10 @@ if(isset($_POST["logout"])){
     <div class="navbar_rigth">
         <div class="navbar_rigth_left" style="display: flex; align-items: center;">
 
+            <a href="<?= $path ?>game" class="navbar_link_img" style="margin-right: 15px;">
+                <img src="<?= $path ?>public/assets/icon_joycon.png" alt="notifica" class="navbar_icon">
+            </a>
+
             <?php if (isset($_SESSION['logged']) && $_SESSION['logged'] === true) { ?>
                 <div class="dropdown">
                     <div onclick="toggleNotifiche()">
